@@ -1,0 +1,18 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Node
+node_modules
+.next
+
+# PHP
+vendor
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
