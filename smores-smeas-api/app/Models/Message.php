@@ -4,16 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Product extends Model
+class Message extends Model
 {
     /**
-     * Fillable mass assignment
+     * fillable mass assignment
      */
     protected $fillable = [
-        'image',
         'name',
-        'description',
-        'price',
-        'stock'
+        'email',
+        'phone',
+        'message'
     ];
 }
