@@ -16,3 +16,6 @@ vendor
 # OS
 .DS_Store
 Thumbs.db
+
+# Miscellaneous
+figma_smores
