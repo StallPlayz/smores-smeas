@@ -374,13 +374,13 @@ export default function Home() {
               </h3>
 
               {/* Dynamic Paragraph Wrapper (Now with a sliding flexbox!) */}
-              <div className="relative overflow-hidden w-full min-h-[220px] md:min-h-[160px]">
+              <div className="relative overflow-hidden w-full min-h-[240px] md:min-h-[320px]">
                 <div
                   className="absolute top-0 left-0 w-full h-full flex transition-transform duration-500 ease-in-out"
                   style={{ transform: `translateX(-${aboutStep * 100}%)` }}
                 >
                   {/* Paragraph 1 */}
-                  <div className="w-full flex-shrink-0 flex items-center pr-4">
+                  <div className="w-full shrink-0 flex items-center pr-4">
                     <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95">
                       <strong
                         className="text-3xl text-[#EBE0D0] font-black tracking-wide pr-2"
@@ -397,7 +397,7 @@ export default function Home() {
                   </div>
 
                   {/* Paragraph 2 */}
-                  <div className="w-full flex-shrink-0 flex items-center pr-4">
+                  <div className="w-full shrink-0 flex items-center pr-4">
                     <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95">
                       Misi kami sederhana: memberikan pengalaman menikmati
                       camilan berkualitas tinggi yang praktis dan siap menemani
