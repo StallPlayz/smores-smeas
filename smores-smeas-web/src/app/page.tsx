@@ -15,6 +15,21 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // State for popups (Modals)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+  // NEW: State for the Carousel
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const nextProduct = () => {
+    setActiveIndex((prev) => (prev === products.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevProduct = () => {
+    setActiveIndex((prev) => (prev === 0 ? products.length - 1 : prev - 1));
+  };
+
   const BACKEND_URL =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
@@ -88,13 +103,13 @@ export default function Home() {
                 href="#about-product"
                 className="hover:text-[#5C3D2E] transition-colors drop-shadow-sm"
               >
-                The Product
+                Why Us?
               </a>
               <a
                 href="#products"
                 className="hover:text-[#5C3D2E] transition-colors drop-shadow-sm"
               >
-                Shop
+                Products
               </a>
               <a
                 href="#contact"
@@ -139,28 +154,15 @@ export default function Home() {
 
         {/* This wrapper keeps the image and text glued together perfectly */}
         <div className="relative flex flex-col items-center justify-center mt-12 md:mt-20 w-full">
-          
-          {/* TITLE DRIP LEFT */}
-          <img 
-            src="/drip-title-left.webp" 
-            alt="Left Title Drip" 
-            className="absolute z-20 w-12 md:w-24 h-auto pointer-events-none bottom-[45%] md:bottom-[70%] left-[15%] md:left-[26%]"
-          />
-
-          {/* TITLE DRIP RIGHT */}
-          <img 
-            src="/drip-title-right.webp" 
-            alt="Right Title Drip" 
-            className="absolute z-20 w-12 md:w-24 h-auto pointer-events-none bottom-[45%] md:bottom-[69%] right-[15%] md:right-[28%]"
-          />
-
           {/* LAYER 1 (BACK): Solid "S'mores" Text */}
-          <h1
-            className="absolute bottom-[55%] md:bottom-[85%] left-1/2 -translate-x-1/2 text-[7rem] md:text-[15rem] leading-none text-[#EBE0D0] z-0 text-center tracking-wider pointer-events-none select-none w-full"
-            style={{ fontFamily: "'Knewave', cursive" }}
-          >
-            S'mores
-          </h1>
+          <div className="absolute bottom-[55%] md:bottom-[85%] left-1/2 -translate-x-1/2 w-max z-0 pointer-events-none select-none">
+            <h1
+              className="text-[7rem] md:text-[15rem] leading-none text-[#F3E4C9] text-center tracking-wider"
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              S'mores
+            </h1>
+          </div>
 
           {/* LAYER 2 (MIDDLE): The Signature Dish Image */}
           <div className="relative z-10 w-full max-w-lg md:max-w-3xl px-4 flex justify-center -mt-[16rem]">
@@ -171,16 +173,32 @@ export default function Home() {
             />
           </div>
 
-          {/* LAYER 3 (FRONT): Outline "S'mores" Text */}
-          <h1
-            className="absolute bottom-[55%] md:bottom-[85%] left-1/2 -translate-x-1/2 text-[7rem] md:text-[15rem] leading-none text-transparent z-20 text-center tracking-wider pointer-events-none select-none w-full"
-            style={{
-              fontFamily: "'Knewave', cursive",
-              WebkitTextStroke: "3px white",
-            }}
-          >
-            S'mores
-          </h1>
+          {/* LAYER 3 (FRONT): Outline "S'mores" Text + DRIPS */}
+          <div className="absolute bottom-[55%] md:bottom-[85%] left-1/2 -translate-x-1/2 w-max z-20 pointer-events-none select-none">
+            <h1
+              className="text-[7rem] md:text-[15rem] leading-none text-transparent text-center tracking-wider"
+              style={{
+                fontFamily: "'Knewave', cursive",
+                WebkitTextStroke: "3px white",
+              }}
+            >
+              S'mores
+            </h1>
+
+            {/* TITLE DRIP LEFT */}
+            <img
+              src="/drip-title-left.webp"
+              alt="Left Title Drip"
+              className="absolute w-12 md:w-24 h-auto bottom-[5%] md:bottom-[-45%] left-[0%] md:left-[2%]"
+            />
+
+            {/* TITLE DRIP RIGHT */}
+            <img
+              src="/drip-title-right.webp"
+              alt="Right Title Drip"
+              className="absolute w-12 md:w-24 h-auto bottom-[5%] md:bottom-[-59%] right-[2%] md:right-[4%]"
+            />
+          </div>
 
           {/* LAYER 4 (FRONT BOTTOM): The "Smeas" Text */}
           <h2
@@ -256,63 +274,116 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Product List */}
-      <section id="products" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Our Products
+      {/* Product Section */}
+      <section id="products" className="py-24 bg-[#F3E8D6] relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+          
+          {/* THE PRODUCT TITLE PILL */}
+          <div className="bg-[#A98B76] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-24 shadow-md">
+            <h2 
+              className="text-4xl md:text-5xl text-[#F4EBD9] tracking-wider select-none"
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              Products
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Browse our selection of ready-to-eat and DIY s'mores kits.
-            </p>
           </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          
+          {/* CAROUSEL CONTAINER */}
+          <div className="relative w-full max-w-5xl flex items-center justify-center min-h-[400px]">
             {loading ? (
-              <div className="col-span-full text-center py-12 text-gray-500 font-medium">
-                Loading delicious treats...
+              <div className="text-[#A68A77] font-medium text-2xl" style={{ fontFamily: "'Knewave', cursive" }}>
+                Loading...
               </div>
             ) : products.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-gray-500 font-medium">
-                No products available right now. Check back later!
+              <div className="text-[#A68A77] font-medium text-xl">
+                No products available right now.
               </div>
             ) : (
-              products.map((product) => (
-                <div
-                  key={product.id}
-                  className="group bg-[#FAFAF9] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
+              <>
+                {/* Left Arrow Button */}
+                <button 
+                  onClick={prevProduct}
+                  className="absolute left-0 md:left-4 z-30 bg-white text-black rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center shadow-lg font-extrabold text-2xl hover:bg-gray-100 transition-transform hover:scale-110"
                 >
-                  <div className="aspect-w-4 aspect-h-3 bg-gray-200 group-hover:bg-gray-300 transition-colors flex items-center justify-center text-gray-500 h-64 overflow-hidden relative">
-                    <img
-                      src={`${BACKEND_URL}/storage/products/${product.image}`}
-                      alt={product.name}
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://via.placeholder.com/400x300?text=No+Image";
-                      }}
-                    />
-                  </div>
-                  <div className="p-6 flex flex-col flex-grow">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-xl font-bold text-gray-900 leading-tight">
-                        {product.name}
-                      </h3>
-                      <span className="text-lg font-semibold text-[#D2691E] ml-4">
-                        {/* Format price depending on your currency logic */}
-                        Rp {Number(product.price).toLocaleString("id-ID")}
-                      </span>
-                    </div>
-                    <p className="text-gray-600 mb-4 text-sm flex-grow line-clamp-3">
-                      {product.description}
-                    </p>
-                    <button className="w-full bg-white border-2 border-[#8B5A2B] text-[#8B5A2B] font-semibold py-2 rounded-lg hover:bg-[#8B5A2B] hover:text-white transition-colors mt-auto">
-                      Add to Cart
-                    </button>
-                  </div>
+                  &#10094;
+                </button>
+
+                {/* The Products Showcase */}
+                <div className="flex items-center justify-center gap-4 md:gap-12 w-full">
+                  {products.map((product, index) => {
+                    // Determine if this card is active, prev, or next
+                    const isActive = index === activeIndex;
+                    const isPrev = index === (activeIndex === 0 ? products.length - 1 : activeIndex - 1);
+                    const isNext = index === (activeIndex === products.length - 1 ? 0 : activeIndex + 1);
+
+                    // Only render the active, previous, and next cards in the DOM
+                    if (!isActive && !isPrev && !isNext && products.length > 2) return null;
+
+                    return (
+                      <div 
+                        key={product.id} 
+                        onClick={() => setActiveIndex(index)}
+                        className={`relative transition-all duration-500 cursor-pointer flex flex-col items-center justify-center bg-[#A98B76] rounded-[2rem] md:rounded-[3rem] ${
+                          isActive 
+                            ? "w-64 h-[22rem] md:w-80 md:h-[26rem] z-20 scale-100 opacity-100 shadow-xl" 
+                            : "w-48 h-56 md:w-56 md:h-64 z-10 scale-90 opacity-50 shadow-md hidden sm:flex"
+                        }`}
+                      >
+                        {/* Image Drip built directly into the active card */}
+                        {isActive && (
+                          <img 
+                            src="/product-drip.webp" 
+                            alt="Card Drip" 
+                            className="absolute -bottom-14 right-0 w-12 md:w-16 h-auto pointer-events-none"
+                          />
+                        )}
+
+                        {/* Product Image popping out the top */}
+                        <div className={`absolute ${isActive ? "-top-16 md:-top-24 w-48 md:w-64" : "-top-12 w-36 md:w-48"} drop-shadow-xl transition-all duration-500`}>
+                          <img 
+                            src={`${BACKEND_URL}/storage/products/${product.image}`} 
+                            alt={product.name}
+                            className="w-full h-auto object-contain hover:scale-105 transition-transform"
+                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Smore'; }}
+                          />
+                        </div>
+
+                        {/* Product Details (Only visible on active card) */}
+                        {isActive && (
+                          <div className="mt-20 md:mt-24 flex flex-col items-center">
+                            <h3 
+                              className="text-[#F4EBD9] text-2xl md:text-3xl tracking-wider mb-6 text-center px-4"
+                              style={{ fontFamily: "'Knewave', cursive" }}
+                            >
+                              {product.name}
+                            </h3>
+                            
+                            {/* Connects to your existing Modal state! */}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevents the card click from firing
+                                setSelectedProduct(product);
+                              }}
+                              className="bg-[#EBE0D0] text-[#8C6F5A] px-8 py-2 md:px-10 md:py-3 rounded-full font-bold text-lg hover:brightness-105 transition-colors drop-shadow-md"
+                              style={{ fontFamily: "'Knewave', cursive" }}
+                            >
+                              Buy Now
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))
+
+                {/* Right Arrow Button */}
+                <button 
+                  onClick={nextProduct}
+                  className="absolute right-0 md:right-4 z-30 bg-white text-black rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center shadow-lg font-extrabold text-2xl hover:bg-gray-100 transition-transform hover:scale-110"
+                >
+                  &#10095;
+                </button>
+              </>
             )}
           </div>
         </div>
