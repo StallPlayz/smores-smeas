@@ -2,6 +2,17 @@
 
 import Head from "next/head";
 import { useEffect, useState } from "react";
+import {
+  FaStar,
+  FaFire,
+  FaTags,
+  FaHeart,
+  FaMapMarkerAlt,
+  FaClock,
+  FaWhatsapp,
+  FaChevronLeft,
+  FaChevronRight,
+} from "react-icons/fa";
 interface Product {
   id: number;
   name: string;
@@ -13,16 +24,15 @@ interface Product {
 
 const ThemeDivider = ({
   colorClass,
-  position = "top", // Standardized to 'top' of current section
+  position = "top",
   flipHorizontal = false,
-  type = "drip", // Options: "drip", "marshmallow", "cracker", "wave"
+  type = "drip",
 }: {
   colorClass: string;
   position?: "top" | "bottom";
   flipHorizontal?: boolean;
   type?: "drip" | "marshmallow" | "cracker" | "wave";
 }) => {
-  // MATHEMATICALLY FIXED COORDINATES from our prior turn's fix!
   const paths = {
     drip: "M0,0 V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z",
     marshmallow:
@@ -74,6 +84,7 @@ export default function Home() {
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [aboutStep, setAboutStep] = useState(0);
 
   const [isExploded, setIsExploded] = useState(false);
 
@@ -85,11 +96,15 @@ export default function Home() {
   }, []);
 
   const nextProduct = () => {
-    setActiveIndex((prev) => (prev === products.length - 1 ? 0 : prev + 1));
+    if (activeIndex < products.length - 1) {
+      setActiveIndex((prev) => prev + 1);
+    }
   };
 
   const prevProduct = () => {
-    setActiveIndex((prev) => (prev === 0 ? products.length - 1 : prev - 1));
+    if (activeIndex > 0) {
+      setActiveIndex((prev) => prev - 1);
+    }
   };
 
   const BACKEND_URL =
@@ -348,22 +363,92 @@ export default function Home() {
             </div>
 
             {/* Right Column: Text Content */}
-            <div className="text-[#F3E4C9] text-lg md:text-xl leading-relaxed text-center md:text-left font-medium drop-shadow-sm">
-              <p>
-                S'mores Smeas lahir dari kecintaan kami terhadap cita rasa
-                klasik dan momen penuh kehangatan. Kami memadukan pesona
-                nostalgia s'mores tradisional dengan inovasi modern,
-                menghadirkan harmoni sempurna antara marshmallow yang lembut,
-                lelehan cokelat premium, dan kerenyahan biskuit dalam setiap
-                gigitan.
-              </p>
-              <p className="mt-6">
-                Misi kami sederhana: memberikan pengalaman menikmati camilan
-                berkualitas tinggi yang praktis dan siap menemani hari Anda,
-                kapan pun dan di mana pun. Setiap porsi S'mores Smeas dibuat
-                dengan dedikasi dan bahan pilihan, mengubah waktu istirahat
-                sejenak menjadi momen manis yang tak terlupakan.
-              </p>
+            <div className="flex-1 flex flex-col justify-center gap-6 text-[#F4EBD9] text-center md:text-left mt-10 md:mt-0">
+              {/* Bubbly Subheading */}
+              <h3
+                className="flex items-center justify-center md:justify-start gap-3 text-4xl md:text-5xl drop-shadow-md text-[#EBE0D0] mb-2"
+                style={{ fontFamily: "'Margarine', sans-serif" }}
+              >
+                Cerita Manis Kami{" "}
+                <FaStar className="text-3xl md:text-4xl text-[#F3E8D6]" />
+              </h3>
+
+              {/* Dynamic Paragraph Wrapper (Now with a sliding flexbox!) */}
+              <div className="relative overflow-hidden w-full min-h-[220px] md:min-h-[160px]">
+                <div
+                  className="absolute top-0 left-0 w-full h-full flex transition-transform duration-500 ease-in-out"
+                  style={{ transform: `translateX(-${aboutStep * 100}%)` }}
+                >
+                  {/* Paragraph 1 */}
+                  <div className="w-full flex-shrink-0 flex items-center pr-4">
+                    <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95">
+                      <strong
+                        className="text-3xl text-[#EBE0D0] font-black tracking-wide pr-2"
+                        style={{ fontFamily: "'Margarine', sans-serif" }}
+                      >
+                        S'mores Smeas
+                      </strong>
+                      lahir dari kecintaan kami terhadap cita rasa klasik dan
+                      momen penuh kehangatan. Kami memadukan pesona nostalgia
+                      s'mores tradisional dengan inovasi modern, menghadirkan
+                      harmoni sempurna antara marshmallow lembut, cokelat
+                      premium, dan biskuit renyah.
+                    </p>
+                  </div>
+
+                  {/* Paragraph 2 */}
+                  <div className="w-full flex-shrink-0 flex items-center pr-4">
+                    <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95">
+                      Misi kami sederhana: memberikan pengalaman menikmati
+                      camilan berkualitas tinggi yang praktis dan siap menemani
+                      hari Anda. Setiap porsi diracik oleh tangan kreatif siswa
+                      SMKN 1 Surabaya dengan dedikasi penuh untuk mengubah waktu
+                      istirahat menjadi momen manis.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation Controls */}
+              <div className="flex items-center justify-center md:justify-start gap-4 mt-2">
+                {/* Left Button */}
+                <button
+                  onClick={() => setAboutStep(0)}
+                  disabled={aboutStep === 0}
+                  className={`p-3 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    aboutStep === 0
+                      ? "bg-[#A68A77]/40 text-[#F4EBD9]/40 cursor-not-allowed shadow-none"
+                      : "bg-[#EBE0D0] text-[#8C6F5A] shadow-md hover:scale-105 hover:bg-white"
+                  }`}
+                >
+                  <FaChevronLeft className="text-xl" />
+                </button>
+
+                {/* Interactive Pagination Dots */}
+                <div className="flex gap-2 mx-4">
+                  <div
+                    onClick={() => setAboutStep(0)}
+                    className={`h-3 rounded-full transition-all duration-500 cursor-pointer ${aboutStep === 0 ? "w-10 bg-[#EBE0D0]" : "w-3 bg-[#A68A77] hover:bg-[#EBE0D0]/50"}`}
+                  ></div>
+                  <div
+                    onClick={() => setAboutStep(1)}
+                    className={`h-3 rounded-full transition-all duration-500 cursor-pointer ${aboutStep === 1 ? "w-10 bg-[#EBE0D0]" : "w-3 bg-[#A68A77] hover:bg-[#EBE0D0]/50"}`}
+                  ></div>
+                </div>
+
+                {/* Right Button */}
+                <button
+                  onClick={() => setAboutStep(1)}
+                  disabled={aboutStep === 1}
+                  className={`p-3 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    aboutStep === 1
+                      ? "bg-[#A68A77]/40 text-[#F4EBD9]/40 cursor-not-allowed shadow-none"
+                      : "bg-[#EBE0D0] text-[#8C6F5A] shadow-md hover:scale-105 hover:bg-white"
+                  }`}
+                >
+                  <FaChevronRight className="text-xl" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -391,8 +476,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
             {/* Feature 1 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
-              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
-                <span className="text-3xl">✨</span>
+              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform text-[#F4EBD9]">
+                <FaStar className="text-3xl" />
               </div>
               <h3
                 className="text-[#F4EBD9] text-2xl tracking-wide mb-3"
@@ -408,8 +493,8 @@ export default function Home() {
 
             {/* Feature 2 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
-              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
-                <span className="text-3xl">🔥</span>
+              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform text-[#F4EBD9]">
+                <FaFire className="text-3xl" />
               </div>
               <h3
                 className="text-[#F4EBD9] text-2xl tracking-wide mb-3"
@@ -425,8 +510,8 @@ export default function Home() {
 
             {/* Feature 3 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
-              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
-                <span className="text-3xl">💸</span>
+              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform text-[#F4EBD9]">
+                <FaTags className="text-3xl" />
               </div>
               <h3
                 className="text-[#F4EBD9] text-2xl tracking-wide mb-3"
@@ -442,8 +527,8 @@ export default function Home() {
 
             {/* Feature 4 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
-              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
-                <span className="text-3xl">❤️</span>
+              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform text-[#F4EBD9]">
+                <FaHeart className="text-3xl" />
               </div>
               <h3
                 className="text-[#F4EBD9] text-2xl tracking-wide mb-3"
@@ -496,12 +581,17 @@ export default function Home() {
               </div>
             ) : (
               <>
-                {/* Left Arrow Button */}
+                {/* Left Nav Arrow */}
                 <button
                   onClick={prevProduct}
-                  className="absolute left-0 md:left-4 z-30 bg-white text-black rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center shadow-lg font-extrabold text-2xl hover:bg-gray-100 transition-transform hover:scale-110"
+                  disabled={activeIndex === 0}
+                  className={`z-30 p-4 md:p-6 rounded-full text-3xl md:text-4xl transition-all duration-300 ${
+                    activeIndex === 0
+                      ? "bg-white/40 text-[#5C3D2E]/40 cursor-not-allowed shadow-none"
+                      : "bg-white text-[#5C3D2E] shadow-xl hover:scale-110"
+                  }`}
                 >
-                  &#10094;
+                  <FaChevronLeft />
                 </button>
 
                 {/* The Products Showcase */}
@@ -595,12 +685,17 @@ export default function Home() {
                   })}
                 </div>
 
-                {/* Right Arrow Button */}
+                {/* Right Nav Arrow */}
                 <button
                   onClick={nextProduct}
-                  className="absolute right-0 md:right-4 z-30 bg-white text-black rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center shadow-lg font-extrabold text-2xl hover:bg-gray-100 transition-transform hover:scale-110"
+                  disabled={activeIndex === products.length - 1}
+                  className={`z-30 p-4 md:p-6 rounded-full text-3xl md:text-4xl transition-all duration-300 ${
+                    activeIndex === products.length - 1
+                      ? "bg-white/40 text-[#5C3D2E]/40 cursor-not-allowed shadow-none"
+                      : "bg-white text-[#5C3D2E] shadow-xl hover:scale-110"
+                  }`}
                 >
-                  &#10095;
+                  <FaChevronRight />
                 </button>
               </>
             )}
@@ -650,7 +745,7 @@ export default function Home() {
               <div className="space-y-8">
                 <div className="flex items-center gap-5 group">
                   <div className="w-14 h-14 bg-[#8C6F5A] rounded-full flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
-                    📍
+                    <FaMapMarkerAlt />
                   </div>
                   <div>
                     <p className="font-black text-lg tracking-wide">
@@ -664,7 +759,7 @@ export default function Home() {
 
                 <div className="flex items-center gap-5 group">
                   <div className="w-14 h-14 bg-[#8C6F5A] rounded-full flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
-                    ⏰
+                    <FaClock />
                   </div>
                   <div>
                     <p className="font-black text-lg tracking-wide">
@@ -678,7 +773,7 @@ export default function Home() {
 
                 <div className="flex items-center gap-5 group">
                   <div className="w-14 h-14 bg-[#8C6F5A] rounded-full flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
-                    📱
+                    <FaWhatsapp />
                   </div>
                   <div>
                     <p className="font-black text-lg tracking-wide">
