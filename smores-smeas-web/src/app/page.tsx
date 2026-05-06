@@ -11,15 +11,27 @@ interface Product {
   stock: number;
 }
 
-const MeltyDivider = ({
+const ThemeDivider = ({
   colorClass,
-  position = "bottom",
+  position = "top", // Standardized to 'top' of current section
   flipHorizontal = false,
+  type = "drip", // Options: "drip", "marshmallow", "cracker", "wave"
 }: {
   colorClass: string;
   position?: "top" | "bottom";
   flipHorizontal?: boolean;
+  type?: "drip" | "marshmallow" | "cracker" | "wave";
 }) => {
+  // MATHEMATICALLY FIXED COORDINATES from our prior turn's fix!
+  const paths = {
+    drip: "M0,0 V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z",
+    marshmallow:
+      "M0,0 V40 Q75,100 150,40 T300,40 T450,40 T600,40 T750,40 T900,40 T1050,40 T1200,40 V0 Z",
+    cracker:
+      "M0,0 V30 L60,90 L120,30 L180,90 L240,30 L300,90 L360,30 L420,90 L480,30 L540,90 L600,30 L660,90 L720,30 L780,90 L840,30 L900,90 L960,30 L1020,90 L1080,30 L1140,90 L1200,30 V0 Z",
+    wave: "M0,0 V60 C400,120 800,0 1200,60 V0 Z",
+  };
+
   return (
     <div
       className={`absolute left-0 right-0 w-full overflow-hidden leading-none z-20 pointer-events-none ${
@@ -27,14 +39,16 @@ const MeltyDivider = ({
       } ${flipHorizontal ? "-scale-x-100" : ""}`}
     >
       <svg
-        className="relative block w-full h-[60px] md:h-[120px]"
+        className="relative block w-full h-[50px] md:h-[100px]"
         viewBox="0 0 1200 120"
         preserveAspectRatio="none"
       >
         <path
-          d="M0,0 V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
+          d={paths[type]}
           className={colorClass}
           fill="currentColor"
+          strokeLinejoin="round"
+          strokeLinecap="round"
         ></path>
       </svg>
     </div>
@@ -199,7 +213,6 @@ export default function Home() {
         `,
           }}
         />
-
         {/* Title Wrapper */}
         <div className="relative flex flex-col items-center justify-center mt-12 md:mt-20 w-full">
           {/* LAYER 1 (BACK): Solid "S'mores" Text */}
@@ -256,15 +269,17 @@ export default function Home() {
             Smeas
           </h2>
         </div>
-
-        {/* Melts DOWN into About Us (Dark Brown) */}
-        <MeltyDivider colorClass="text-[#8C6F5A]" position="bottom" />
+        <ThemeDivider
+          colorClass="text-[#8C6F5A]"
+          position="bottom"
+          type="drip"
+        />{" "}
       </section>
 
       {/* About Us Section */}
       <section
         id="about-us"
-        className="py-24 bg-[#8C6F5A] relative overflow-hidden"
+        className="relative py-24 bg-[#8C6F5A] relative overflow-hidden"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           {/* THE ABOUT US TITLE PILL */}
@@ -356,6 +371,11 @@ export default function Home() {
 
       {/* Why Us Section */}
       <section id="why-us" className="py-24 bg-brown relative overflow-hidden">
+        <ThemeDivider
+          colorClass="text-[#8C6F5A]"
+          position="top"
+          type="marshmallow"
+        />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           {/* THE WHY US TITLE PILL */}
           <div className="bg-[#A68A77] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
@@ -445,6 +465,11 @@ export default function Home() {
         id="products"
         className="py-24 bg-[#8C6F5A] relative overflow-hidden"
       >
+        <ThemeDivider
+          colorClass="text-[#bea18b]"
+          position="top"
+          type="cracker"
+        />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           {/* THE PRODUCT TITLE PILL */}
           <div className="bg-[#A98B76] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-24 shadow-md">
@@ -588,6 +613,12 @@ export default function Home() {
         id="contact"
         className="py-24 bg-[#4A2E1B] relative overflow-hidden"
       >
+        <ThemeDivider
+          colorClass="text-[#8C6F5A]"
+          position="top"
+          type="wave"
+          flipHorizontal={true}
+        />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           {/* THE CONTACT TITLE PILL */}
           <div className="bg-[#A68A77] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
