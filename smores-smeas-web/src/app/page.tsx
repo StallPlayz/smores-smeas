@@ -1169,16 +1169,21 @@ export default function Home() {
 
             {/* Login Form */}
             <form
-              className={`w-full flex flex-col transition-all duration-300 ease-in-out transform ${
+              className={`w-full flex flex-col gap-6 transition-all duration-300 ease-in-out transform ${
                 isFormAnimVisible
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 -translate-y-4"
               }`}
               onSubmit={handleAuthSubmit}
             >
-              {/* Conditionally render Name field only for Register mode */}
-              {isRegisterMode && (
-                <div>
+              <div
+                className={`grid transition-all duration-300 ease-in-out ${
+                  isRegisterMode
+                    ? "grid-rows-[1fr] opacity-100 mb-6"
+                    : "grid-rows-[0fr] opacity-0 mb-0 pointer-events-none"
+                }`}
+              >
+                <div className="overflow-hidden flex flex-col">
                   <label
                     className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-2xl"
                     style={{ fontFamily: "'Knewave', cursive" }}
@@ -1195,9 +1200,10 @@ export default function Home() {
                     required={isRegisterMode}
                   />
                 </div>
-              )}
+              </div>
 
-              <div>
+              {/* --- ADD mb-6 TO EMAIL FIELD --- */}
+              <div className="mb-6">
                 <label
                   className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-2xl"
                   style={{ fontFamily: "'Knewave', cursive" }}
@@ -1215,7 +1221,8 @@ export default function Home() {
                 />
               </div>
 
-              <div>
+              {/* --- ADD mb-6 TO PASSWORD FIELD --- */}
+              <div className="mb-6">
                 <label
                   className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-2xl"
                   style={{ fontFamily: "'Knewave', cursive" }}
@@ -1260,7 +1267,7 @@ export default function Home() {
                   className="underline hover:text-white transition-colors"
                 >
                   {isRegisterMode ? "Login di sini" : "Daftar di sini"}
-                </button> 
+                </button>
               </p>
             </form>
           </div>
