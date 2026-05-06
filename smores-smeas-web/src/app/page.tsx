@@ -259,8 +259,16 @@ export default function Home() {
         const response = await fetch(`${BACKEND_URL}/api/products`);
         const result = await response.json();
 
-        if (result.status === "success") {
-          setProducts(result.data);
+        if (response.ok) {
+          if (result.data && Array.isArray(result.data)) {
+            setProducts(result.data);
+          }
+          else if (Array.isArray(result)) {
+            setProducts(result);
+          }
+          else if (result.status === "success") {
+            setProducts(result.data);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch products:", error);
