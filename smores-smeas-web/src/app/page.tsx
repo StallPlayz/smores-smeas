@@ -438,9 +438,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* Melts DOWN into Products (Dark Brown) */}
-        <MeltyDivider colorClass="text-[#8C6F5A]" position="bottom" />
       </section>
 
       {/* Product Section */}
