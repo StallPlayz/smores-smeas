@@ -15,12 +15,33 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // State for popups (Modals)
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [modalProduct, setModalProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // NEW: State for the Carousel
+  const openModal = (product: Product) => {
+    setModalProduct(product);
+    setTimeout(() => setIsModalOpen(true), 10);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setModalProduct(null), 300);
+  };
+
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const [isExploded, setIsExploded] = useState(false);
+
+  useEffect(() => {
+    // This timer flips the 'isExploded' switch every 2.5 seconds
+    const interval = setInterval(() => {
+      setIsExploded((prev) => !prev);
+    }, 2500);
+
+    // Cleanup the interval if the component unmounts
+    return () => clearInterval(interval);
+  }, []);
 
   const nextProduct = () => {
     setActiveIndex((prev) => (prev === products.length - 1 ? 0 : prev + 1));
@@ -210,26 +231,95 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Us */}
-      <section id="about-us" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
-            <div className="mb-10 lg:mb-0">
-              {/* Placeholder for an Image from your Mockup */}
-              <div className="rounded-2xl bg-gray-200 aspect-video lg:aspect-square flex items-center justify-center text-gray-400 shadow-inner">
-                [About Us Image]
+      {/* About Us Section */}
+      {/* Used a dark brown background to match the contrast in your Figma mockup */}
+      <section
+        id="about-us"
+        className="py-24 bg-[#8C6F5A] relative overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+          {/* THE ABOUT US TITLE PILL */}
+          <div className="bg-[#BFA28C] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
+            <h2
+              className="text-4xl md:text-5xl text-[#F3E4C9] tracking-wider select-none"
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              About Us
+            </h2>
+          </div>
+
+          {/* Content Layout: 2 Columns on Desktop, Stacked on Mobile */}
+          <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center w-full max-w-5xl">
+            {/* Left Column: Animated Exploding S'more */}
+            <div className="relative flex justify-center items-center h-80 md:h-[28rem] w-full">
+              {/* The background circle */}
+              <div className="absolute w-64 h-64 md:w-80 md:h-80 bg-[#BFA28C] rounded-full shadow-inner opacity-90"></div>
+
+              {/* THE ANIMATED 4-LAYER S'MORE */}
+              <div className="relative z-10 w-48 h-48 md:w-64 md:h-64 flex items-center justify-center left-2 -mt-[-1rem]">
+                {/* 4. Bottom Graham Cracker (Back Layer) */}
+                <img
+                  src="/smore-layer-1.webp"
+                  alt="Bottom Graham Cracker"
+                  className={`absolute inset-0 w-full h-full left-1 object-contain drop-shadow-lg transition-all duration-[1500ms] ease-in-out ${
+                    isExploded
+                      ? "translate-y-16 md:translate-y-24 scale-105"
+                      : "translate-y-6 md:translate-y-8 scale-100"
+                  }`}
+                />
+
+                {/* 3. Chocolate Layer */}
+                <img
+                  src="/smore-layer-3-chocolate.webp"
+                  alt="Chocolate"
+                  className={`absolute inset-0 w-full h-full object-contain drop-shadow-lg transition-all duration-[1500ms] ease-in-out ${
+                    isExploded
+                      ? "translate-y-4 md:translate-y-8 scale-105"
+                      : "translate-y-2 md:translate-y-3 scale-100"
+                  }`}
+                />
+
+                {/* 2. Marshmallow Layer */}
+                <img
+                  src="/smore-layer-2-marshmallow.webp"
+                  alt="Marshmallow"
+                  className={`absolute inset-0 w-full h-full object-contain drop-shadow-xl transition-all duration-[1500ms] ease-in-out ${
+                    isExploded
+                      ? "-translate-y-8 md:-translate-y-10 scale-105"
+                      : "-translate-y-2 md:-translate-y-3 scale-100"
+                  }`}
+                />
+
+                {/* 1. Top Graham Cracker (Front Layer) */}
+                <img
+                  src="/smore-layer-1.webp"
+                  alt="Top Graham Cracker"
+                  className={`absolute inset-0 w-full h-full object-contain drop-shadow-2xl transition-all duration-[1500ms] ease-in-out ${
+                    isExploded
+                      ? "-translate-y-20 md:-translate-y-28 scale-105"
+                      : "-translate-y-6 md:-translate-y-8 scale-100"
+                  }`}
+                />
               </div>
             </div>
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-4 border-b-4 border-[#D2691E] pb-2 inline-block">
-                Our Story
-              </h2>
-              <p className="text-lg text-gray-600 leading-relaxed mb-6">
-                What started as a simple late-night craving turned into an
-                obsession with crafting the ultimate treat. We source the finest
-                artisan marshmallows, small-batch graham crackers, and ethically
-                traded chocolate to bring you a nostalgic experience upgraded
-                for the modern palate.
+
+            {/* Right Column: Text Content */}
+            {/* Using a handwritten/casual feeling style to match the vibes, with the exact text from your mockup */}
+            <div className="text-[#F3E4C9] text-lg md:text-xl leading-relaxed text-center md:text-left font-medium drop-shadow-sm">
+              <p>
+                S'mores Smeas lahir dari kecintaan kami terhadap cita rasa
+                klasik dan momen penuh kehangatan. Kami memadukan pesona
+                nostalgia s'mores tradisional dengan inovasi modern,
+                menghadirkan harmoni sempurna antara marshmallow yang lembut,
+                lelehan cokelat premium, dan kerenyahan biskuit dalam setiap
+                gigitan.
+              </p>
+              <p className="mt-6">
+                Misi kami sederhana: memberikan pengalaman menikmati camilan
+                berkualitas tinggi yang praktis dan siap menemani hari Anda,
+                kapan pun dan di mana pun. Setiap porsi S'mores Smeas dibuat
+                dengan dedikasi dan bahan pilihan, mengubah waktu istirahat
+                sejenak menjadi momen manis yang tak terlupakan.
               </p>
             </div>
           </div>
@@ -275,23 +365,28 @@ export default function Home() {
       </section>
 
       {/* Product Section */}
-      <section id="products" className="py-24 bg-[#F3E8D6] relative overflow-hidden">
+      <section
+        id="products"
+        className="py-24 bg-[#F3E8D6] relative overflow-hidden"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-          
           {/* THE PRODUCT TITLE PILL */}
           <div className="bg-[#A98B76] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-24 shadow-md">
-            <h2 
+            <h2
               className="text-4xl md:text-5xl text-[#F4EBD9] tracking-wider select-none"
               style={{ fontFamily: "'Knewave', cursive" }}
             >
               Products
             </h2>
           </div>
-          
+
           {/* CAROUSEL CONTAINER */}
           <div className="relative w-full max-w-5xl flex items-center justify-center min-h-[400px]">
             {loading ? (
-              <div className="text-[#A68A77] font-medium text-2xl" style={{ fontFamily: "'Knewave', cursive" }}>
+              <div
+                className="text-[#A68A77] font-medium text-2xl"
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
                 Loading...
               </div>
             ) : products.length === 0 ? (
@@ -301,7 +396,7 @@ export default function Home() {
             ) : (
               <>
                 {/* Left Arrow Button */}
-                <button 
+                <button
                   onClick={prevProduct}
                   className="absolute left-0 md:left-4 z-30 bg-white text-black rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center shadow-lg font-extrabold text-2xl hover:bg-gray-100 transition-transform hover:scale-110"
                 >
@@ -309,75 +404,103 @@ export default function Home() {
                 </button>
 
                 {/* The Products Showcase */}
-                <div className="flex items-center justify-center gap-4 md:gap-12 w-full">
+                {/* CHANGED: Switched to a relative container with fixed height so cards can stack and slide over each other */}
+                <div className="relative flex items-center justify-center w-full h-[26rem] md:h-[26rem] overflow-visible">
                   {products.map((product, index) => {
                     // Determine if this card is active, prev, or next
                     const isActive = index === activeIndex;
-                    const isPrev = index === (activeIndex === 0 ? products.length - 1 : activeIndex - 1);
-                    const isNext = index === (activeIndex === products.length - 1 ? 0 : activeIndex + 1);
-
-                    // Only render the active, previous, and next cards in the DOM
-                    if (!isActive && !isPrev && !isNext && products.length > 2) return null;
+                    const isPrev =
+                      index ===
+                      (activeIndex === 0
+                        ? products.length - 1
+                        : activeIndex - 1);
+                    const isNext =
+                      index ===
+                      (activeIndex === products.length - 1
+                        ? 0
+                        : activeIndex + 1);
 
                     return (
-                      <div 
-                        key={product.id} 
-                        onClick={() => setActiveIndex(index)}
-                        className={`relative transition-all duration-500 cursor-pointer flex flex-col items-center justify-center bg-[#A98B76] rounded-[2rem] md:rounded-[3rem] ${
-                          isActive 
-                            ? "w-64 h-[22rem] md:w-80 md:h-[26rem] z-20 scale-100 opacity-100 shadow-xl" 
-                            : "w-48 h-56 md:w-56 md:h-64 z-10 scale-90 opacity-50 shadow-md hidden sm:flex"
+                      <div
+                        key={product.id}
+                        onClick={() => {
+                          if (isActive) openModal(product);
+                          else if (isPrev || isNext) setActiveIndex(index);
+                        }}
+                        // CHANGED: Cards are now 'absolute'. We use 'translate-x' to smoothly slide them left and right!
+                        className={`absolute transition-all duration-700 ease-in-out cursor-pointer flex flex-col items-center justify-center bg-[#A98B76] rounded-[2rem] md:rounded-[3rem] ${
+                          isActive
+                            ? "w-64 h-[22rem] md:w-80 md:h-[26rem] z-20 scale-100 opacity-100 shadow-xl translate-x-0"
+                            : isPrev
+                              ? "w-48 h-56 md:w-56 md:h-64 z-10 scale-90 opacity-50 shadow-md -translate-x-36 md:-translate-x-72 hidden sm:flex"
+                              : isNext
+                                ? "w-48 h-56 md:w-56 md:h-64 z-10 scale-90 opacity-50 shadow-md translate-x-36 md:translate-x-72 hidden sm:flex"
+                                : // THE FIX: Hidden cards don't delete, they fade to 0 opacity and scale down behind the center!
+                                  "w-48 h-56 md:w-56 md:h-64 z-0 scale-75 opacity-0 pointer-events-none translate-x-0 hidden sm:flex"
                         }`}
                       >
                         {/* Image Drip built directly into the active card */}
                         {isActive && (
-                          <img 
-                            src="/product-drip.webp" 
-                            alt="Card Drip" 
-                            className="absolute -bottom-14 right-0 w-12 md:w-16 h-auto pointer-events-none"
+                          <img
+                            src="/product-drip.webp"
+                            alt="Card Drip"
+                            className="absolute -bottom-13 right-[-1] w-10 md:w-14 h-auto pointer-events-none transition-opacity duration-500 delay-200"
                           />
                         )}
 
                         {/* Product Image popping out the top */}
-                        <div className={`absolute ${isActive ? "-top-16 md:-top-24 w-48 md:w-64" : "-top-12 w-36 md:w-48"} drop-shadow-xl transition-all duration-500`}>
-                          <img 
-                            src={`${BACKEND_URL}/storage/products/${product.image}`} 
+                        <div
+                          className={`absolute ${isActive ? "-top-16 md:-top-24 w-48 md:w-64" : "-top-12 w-36 md:w-48"} drop-shadow-xl transition-all duration-700`}
+                        >
+                          <img
+                            src={`${BACKEND_URL}/storage/products/${product.image}`}
                             alt={product.name}
                             className="w-full h-auto object-contain hover:scale-105 transition-transform"
-                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Smore'; }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src =
+                                "https://via.placeholder.com/300?text=Smore";
+                            }}
                           />
                         </div>
 
                         {/* Product Details (Only visible on active card) */}
-                        {isActive && (
-                          <div className="mt-20 md:mt-24 flex flex-col items-center">
-                            <h3 
-                              className="text-[#F4EBD9] text-2xl md:text-3xl tracking-wider mb-6 text-center px-4"
-                              style={{ fontFamily: "'Knewave', cursive" }}
-                            >
-                              {product.name}
-                            </h3>
-                            
-                            {/* Connects to your existing Modal state! */}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation(); // Prevents the card click from firing
-                                setSelectedProduct(product);
-                              }}
-                              className="bg-[#EBE0D0] text-[#8C6F5A] px-8 py-2 md:px-10 md:py-3 rounded-full font-bold text-lg hover:brightness-105 transition-colors drop-shadow-md"
-                              style={{ fontFamily: "'Knewave', cursive" }}
-                            >
-                              Buy Now
-                            </button>
+                        {/* Added transition-opacity so the text fades in nicely when it reaches the center */}
+                        <div
+                          className={`mt-20 md:mt-24 flex flex-col items-center transition-opacity duration-500 ${isActive ? "opacity-100" : "opacity-0"}`}
+                        >
+                          <h3
+                            className="text-[#F4EBD9] text-2xl md:text-3xl tracking-wider mb-2 text-center px-4"
+                            style={{ fontFamily: "'Knewave', cursive" }}
+                          >
+                            {product.name}
+                          </h3>
+
+                          {/* Price */}
+                          <div
+                            className="text-[#F4EBD9] text-lg md:text-xl tracking-wider mb-6 opacity-90"
+                            style={{ fontFamily: "'Knewave', cursive" }}
+                          >
+                            IDR {Number(product.price).toLocaleString("id-ID")}
                           </div>
-                        )}
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openModal(product);
+                            }}
+                            className="bg-[#EBE0D0] text-[#8C6F5A] px-8 py-2 md:px-10 md:py-3 rounded-full font-bold text-lg hover:brightness-105 transition-colors drop-shadow-md"
+                            style={{ fontFamily: "'Knewave', cursive" }}
+                          >
+                            Buy Now
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
 
                 {/* Right Arrow Button */}
-                <button 
+                <button
                   onClick={nextProduct}
                   className="absolute right-0 md:right-4 z-30 bg-white text-black rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center shadow-lg font-extrabold text-2xl hover:bg-gray-100 transition-transform hover:scale-110"
                 >
@@ -455,11 +578,408 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#1A110D] py-8 text-center text-gray-500 text-sm">
-        <p>
-          &copy; {new Date().getFullYear()} Smores Smeas. All rights reserved.
-        </p>
+      {/* --- MODALS --- */}
+
+      {/* Product Detail Modal */}
+      {modalProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* Background Overlay - Fades In/Out */}
+          <div
+            className={`absolute inset-0 bg-[#F3E8D6]/80 backdrop-blur-sm cursor-pointer transition-opacity duration-300 ease-in-out ${
+              isModalOpen ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={closeModal}
+          ></div>
+
+          {/* The Modal Container - Zooms & Slides In/Out */}
+          <div
+            className={`relative bg-[#A98B76] rounded-[3rem] p-8 md:p-12 w-full max-w-xl max-h-[70vh] shadow-2xl flex flex-col items-center transition-all duration-300 ease-out transform ${
+              isModalOpen
+                ? "opacity-100 scale-100 translate-y-0"
+                : "opacity-0 scale-95 translate-y-8"
+            }`}
+          >
+            {/* The bold, round Close Button (Top Right) */}
+            <button
+              onClick={closeModal}
+              className="absolute top-6 right-6 bg-white text-black text-2xl font-black w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors drop-shadow-md pb-1"
+            >
+              x
+            </button>
+
+            {/* Modal Drip Asset */}
+            <img
+              src="/product-drip.webp"
+              alt="Modal Drip"
+              className="absolute -bottom-14 right-0 w-16 md:w-16 h-auto pointer-events-none"
+            />
+
+            {/* Product Image */}
+            <div className="w-64 h-64 md:w-80 md:h-80 -mt-24 md:-mt-32 drop-shadow-2xl mb-8">
+              <img
+                src={`${BACKEND_URL}/storage/products/${modalProduct.image}`}
+                alt={modalProduct.name}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    "https://via.placeholder.com/400?text=Smore";
+                }}
+              />
+            </div>
+
+            {/* Product Title */}
+            <h3
+              className="text-[#F4EBD9] text-3xl md:text-4xl tracking-wider mb-6 text-center"
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              {modalProduct.name}
+            </h3>
+
+            {/* Product Description */}
+            <p className="text-[#F4EBD9] text-center text-lg md:text-l max-w-2xl leading-relaxed mb-6 font-medium italic">
+              "{modalProduct.description}"
+            </p>
+
+            {/* Dynamic Stock Indicator */}
+            <p className="text-[#F4EBD9]/80 text-center text-sm md:text-base font-bold mb-4 uppercase tracking-widest">
+              Available Stock: {modalProduct.stock}
+            </p>
+
+            {/* Price Label */}
+            <div
+              className="text-[#F4EBD9] text-2xl md:text-3xl tracking-wider mb-8 drop-shadow-sm"
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              IDR {Number(modalProduct.price).toLocaleString("id-ID")}
+            </div>
+
+            {/* Buy Now Button */}
+            <button
+              className="bg-[#EBE0D0] text-[#8C6F5A] px-12 py-4 rounded-full font-bold text-xl hover:brightness-105 transition-transform hover:scale-105 drop-shadow-md"
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              Buy Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- FOOTER / TEAM CREDITS & LINKS --- */}
+      <footer className="bg-[#A98B76] pt-20 pb-10 text-[#F4EBD9] mt-24 rounded-t-[3rem] md:rounded-t-[5rem] relative overflow-hidden shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <h2
+              className="text-5xl md:text-6xl tracking-wider mb-4 drop-shadow-md"
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              The Team
+            </h2>
+            <p className="text-xl opacity-90 font-medium">
+              Kelompok 1 - S'mores Smeas
+            </p>
+          </div>
+
+          {/* Team Member Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-8">
+            {/* Team Member 1 */}
+            <div className="bg-[#8C6F5A] p-8 rounded-[2rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-lg border border-white/10 group">
+              <div className="w-16 h-16 mx-auto bg-[#BAC4A2] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                <span
+                  className="text-[#5C3D2E] font-black text-2xl"
+                  style={{ fontFamily: "'Knewave', cursive" }}
+                >
+                  F
+                </span>
+              </div>
+              <h3 className="font-bold text-xl mb-1">Fakhri Cahyo D.N</h3>
+              <p className="text-sm opacity-70 mb-4">Absen: 34</p>
+              <div className="inline-block bg-[#EBE0D0] text-[#8C6F5A] text-xs font-black px-4 py-1.5 rounded-full mb-6 uppercase tracking-wider drop-shadow-sm">
+                UI/UX
+              </div>
+              <a
+                href="https://instagram.com/khrisselll"
+                target="_blank"
+                rel="noreferrer"
+                className="block text-[#F3E8D6] hover:text-white hover:underline transition-colors font-medium"
+              >
+                @khrisselll
+              </a>
+            </div>
+
+            {/* Team Member 2 */}
+            <div className="bg-[#8C6F5A] p-8 rounded-[2rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-lg border border-white/10 group">
+              <div className="w-16 h-16 mx-auto bg-[#BAC4A2] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                <span
+                  className="text-[#5C3D2E] font-black text-2xl"
+                  style={{ fontFamily: "'Knewave', cursive" }}
+                >
+                  D
+                </span>
+              </div>
+              <h3 className="font-bold text-xl mb-1">Dava Galang S.</h3>
+              <p className="text-sm opacity-70 mb-4">Absen: 23</p>
+              <div className="inline-block bg-[#EBE0D0] text-[#8C6F5A] text-xs font-black px-4 py-1.5 rounded-full mb-6 uppercase tracking-wider drop-shadow-sm">
+                Back End
+              </div>
+              <a
+                href="https://instagram.com/pan_dvpan"
+                target="_blank"
+                rel="noreferrer"
+                className="block text-[#F3E8D6] hover:text-white hover:underline transition-colors font-medium"
+              >
+                @pan_dvpan
+              </a>
+            </div>
+
+            {/* Team Member 3 */}
+            <div className="bg-[#8C6F5A] p-8 rounded-[2rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-lg border border-white/10 group">
+              <div className="w-16 h-16 mx-auto bg-[#BAC4A2] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                <span
+                  className="text-[#5C3D2E] font-black text-2xl"
+                  style={{ fontFamily: "'Knewave', cursive" }}
+                >
+                  A
+                </span>
+              </div>
+              <h3 className="font-bold text-xl mb-1">Adis Ibad Basysyr</h3>
+              <p className="text-sm opacity-70 mb-4">Absen: 09</p>
+              <div className="inline-block bg-[#EBE0D0] text-[#8C6F5A] text-xs font-black px-4 py-1.5 rounded-full mb-6 uppercase tracking-wider drop-shadow-sm">
+                Laporan
+              </div>
+              <a
+                href="https://instagram.com/kyleebgeenir"
+                target="_blank"
+                rel="noreferrer"
+                className="block text-[#F3E8D6] hover:text-white hover:underline transition-colors font-medium"
+              >
+                @kyleebgeenir
+              </a>
+            </div>
+
+            {/* Team Member 4 */}
+            <div className="bg-[#8C6F5A] p-8 rounded-[2rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-lg border border-white/10 group">
+              <div className="w-16 h-16 mx-auto bg-[#BAC4A2] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                <span
+                  className="text-[#5C3D2E] font-black text-2xl"
+                  style={{ fontFamily: "'Knewave', cursive" }}
+                >
+                  G
+                </span>
+              </div>
+              <h3 className="font-bold text-xl mb-1">Gusano Deseda</h3>
+              <p className="text-sm opacity-70 mb-4">Absen: 35</p>
+              <div className="inline-block bg-[#EBE0D0] text-[#8C6F5A] text-xs font-black px-4 py-1.5 rounded-full mb-6 uppercase tracking-wider drop-shadow-sm">
+                Front End
+              </div>
+              <a
+                href="https://instagram.com/stallplayz._.101"
+                target="_blank"
+                rel="noreferrer"
+                className="block text-[#F3E8D6] hover:text-white hover:underline transition-colors font-medium"
+              >
+                @stallplayz._.101
+              </a>
+            </div>
+          </div>
+
+          {/* --- NEW PROFESSIONAL LINKS SECTION --- */}
+          <div className="border-t-2 border-[#F4EBD9]/20 pt-16 pb-12 mt-16 flex flex-col lg:flex-row justify-between gap-12">
+            {/* Brand & Mission */}
+            <div className="lg:w-1/3">
+              <h2
+                className="text-4xl tracking-wider mb-4 drop-shadow-sm"
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
+                S'mores Smeas
+              </h2>
+              <p className="opacity-80 leading-relaxed max-w-sm font-medium">
+                Nostalgia in every bite. We bring the ultimate campfire
+                experience directly to you, no fire pit required. Perfect for a
+                late-night treat or a sweet gift.
+              </p>
+            </div>
+
+            {/* Sitemap Grid */}
+            <div className="lg:w-2/3 grid grid-cols-2 md:grid-cols-4 gap-8">
+              {/* Column 1 */}
+              <div>
+                <h4 className="font-bold text-lg mb-6 text-white drop-shadow-sm uppercase tracking-wide">
+                  Explore
+                </h4>
+                <ul className="space-y-4 opacity-80 font-medium">
+                  <li>
+                    <a
+                      href="#home"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Home
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#products"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Products
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      About Us
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Why Us?
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Column 2 */}
+              <div>
+                <h4 className="font-bold text-lg mb-6 text-white drop-shadow-sm uppercase tracking-wide">
+                  Company
+                </h4>
+                <ul className="space-y-4 opacity-80 font-medium">
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Careers
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Blog
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Press & Media
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Partnerships
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Column 3 */}
+              <div>
+                <h4 className="font-bold text-lg mb-6 text-white drop-shadow-sm uppercase tracking-wide">
+                  Legal
+                </h4>
+                <ul className="space-y-4 opacity-80 font-medium">
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Terms of Service
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Privacy Policy
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Cookie Policy
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Refunds
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Column 4 */}
+              <div>
+                <h4 className="font-bold text-lg mb-6 text-white drop-shadow-sm uppercase tracking-wide">
+                  Social
+                </h4>
+                <ul className="space-y-4 opacity-80 font-medium">
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Instagram
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      TikTok
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Twitter / X
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="hover:text-white hover:translate-x-1 inline-block transition-transform"
+                    >
+                      Github
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Copyright Bar */}
+          <div className="border-t-2 border-[#F4EBD9]/10 pt-8 flex flex-col md:flex-row justify-between items-center text-sm opacity-80">
+            <p className="tracking-wide mb-4 md:mb-0">
+              &copy; {new Date().getFullYear()} S'mores Smeas Inc. All rights
+              reserved.
+            </p>
+            <p className="font-medium flex items-center gap-2">
+              Built with <span className="text-red-400 text-lg">♥</span> for Web
+              Programming
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   );
