@@ -72,6 +72,35 @@ export default function Home() {
 
   const [modalProduct, setModalProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoginModalMounted, setIsLoginModalMounted] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [isFormAnimVisible, setIsFormAnimVisible] = useState(true);
+  const [authForm, setAuthForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const [user, setUser] = useState<{
+    id: number;
+    name: string;
+    email: string;
+  } | null>(null);
+
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleAuthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAuthForm({ ...authForm, [e.target.name]: e.target.value });
+  };
 
   const openModal = (product: Product) => {
     setModalProduct(product);
@@ -81,6 +110,99 @@ export default function Home() {
   const closeModal = () => {
     setIsModalOpen(false);
     setTimeout(() => setModalProduct(null), 300);
+  };
+
+  const openLoginModal = () => {
+    setIsAuthLoading(false);
+    setIsRegisterMode(false);
+    setAuthForm({ name: "", email: "", password: "" });
+    setIsFormAnimVisible(true);
+
+    setIsLoginModalMounted(true);
+    setTimeout(() => setIsLoginModalOpen(true), 10);
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+
+    setTimeout(() => {
+      setIsLoginModalMounted(false);
+      setIsRegisterMode(false);
+      setAuthForm({ name: "", email: "", password: "" });
+      setIsAuthLoading(false);
+    }, 300);
+  };
+
+  const toggleAuthMode = () => {
+    setIsFormAnimVisible(false);
+
+    setTimeout(() => {
+      setIsRegisterMode((prev) => !prev);
+      setIsFormAnimVisible(true);
+    }, 300);
+  };
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAuthLoading(true);
+
+    const endpoint = isRegisterMode ? "/api/auth/register" : "/api/auth/login";
+    const payload = isRegisterMode
+      ? {
+          name: authForm.name,
+          email: authForm.email,
+          password: authForm.password,
+        }
+      : { email: authForm.email, password: authForm.password };
+
+    try {
+      const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setUser(data.user);
+        closeLoginModal();
+      } else {
+        const errorMsg =
+          data.message ||
+          (isRegisterMode ? "Registration failed." : "Login failed.");
+        alert(errorMsg);
+      }
+    } catch (error) {
+      console.error("Auth error:", error);
+      alert("An error occurred. Please try again.");
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLogoutLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${BACKEND_URL}/api/auth/logout`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setUser(null);
+      setIsLogoutLoading(false);
+    }
   };
 
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -220,16 +342,34 @@ export default function Home() {
         {/* 2. FLOATING LOGIN BUTTON (Top Right) */}
         <div className="absolute top-6 right-4 md:right-8 pointer-events-auto drop-shadow-md">
           <div className="relative">
-            <button className="bg-[#babf94] text-white font-bold text-sm md:text-base px-6 py-2 rounded-full hover:text-[#5C3D2E] transition-colors drop-shadow-sm">
-              Login
-            </button>
-
-            {/* Small Login Drip */}
-            <img
-              src="/drip-small.webp"
-              alt="Small Drip"
-              className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-auto pointer-events-none -mt-[1px]"
-            />
+            {user ? (
+              <button
+                onClick={handleLogout}
+                disabled={isLogoutLoading}
+                className={`bg-[#5C3D2E] text-white font-bold text-sm md:text-base px-6 py-2 rounded-full transition-colors drop-shadow-sm ${
+                  isLogoutLoading
+                    ? "opacity-70 cursor-wait"
+                    : "hover:bg-red-800"
+                }`}
+              >
+                {isLogoutLoading ? "Memproses..." : `Logout (${user.name})`}
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={openLoginModal}
+                  className="bg-[#babf94] text-white font-bold text-sm md:text-base px-6 py-2 rounded-full hover:text-[#5C3D2E] transition-colors drop-shadow-sm"
+                >
+                  Login
+                </button>
+                {/* Small Login Drip */}
+                <img
+                  src="/drip-small.webp"
+                  alt="Small Drip"
+                  className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-16 h-auto pointer-events-none -mt-[1px]"
+                />
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -970,6 +1110,159 @@ export default function Home() {
             >
               Buy Now
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Login Popup Modal */}
+      {isLoginModalMounted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* Background Overlay - Fades In/Out */}
+          <div
+            className={`absolute inset-0 bg-[#F3E8D6]/80 backdrop-blur-sm cursor-pointer transition-opacity duration-300 ease-in-out ${
+              isLoginModalOpen ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={closeLoginModal}
+          ></div>
+
+          {/* The Modal Container - Zooms & Slides In/Out (Adapted from product modal) */}
+          <div
+            className={`relative bg-[#8d6a54] rounded-t-[3rem] p-8 md:p-12 w-full max-w-xl shadow-2xl flex flex-col items-center transition-all duration-300 ease-out transform ${
+              isLoginModalOpen
+                ? "opacity-100 scale-100 translate-y-0"
+                : "opacity-0 scale-95 translate-y-8"
+            }`}
+          >
+            {/* The bold, round Close Button (Top Right) */}
+            <button
+              onClick={closeLoginModal}
+              className="absolute top-6 right-6 bg-white text-black text-2xl font-black w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors drop-shadow-md pb-1"
+            >
+              x
+            </button>
+
+            {/* drip left */}
+            <img
+              src="/login-drip-left.webp"
+              alt="Login Drip Left"
+              className="absolute -bottom-18 left-0 w-20 md:w-20 h-auto pointer-events-none"
+            />
+
+            {/* drip right */}
+            <img
+              src="/login-drip-right.webp"
+              alt="Login Drip Right"
+              className="absolute -bottom-18 right-0 w-20 md:w-20 h-auto pointer-events-none"
+            />
+
+            {/* Form Title */}
+            <h3
+              className={`text-[#F4EBD9] text-3xl md:text-4xl tracking-wider mb-6 text-center transition-all duration-300 ease-in-out transform ${
+                isFormAnimVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 -translate-y-4"
+              }`}
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              {isRegisterMode ? "Register" : "Login"}
+            </h3>
+
+            {/* Login Form */}
+            <form
+              className={`w-full flex flex-col transition-all duration-300 ease-in-out transform ${
+                isFormAnimVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 -translate-y-4"
+              }`}
+              onSubmit={handleAuthSubmit}
+            >
+              {/* Conditionally render Name field only for Register mode */}
+              {isRegisterMode && (
+                <div>
+                  <label
+                    className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-2xl"
+                    style={{ fontFamily: "'Knewave', cursive" }}
+                  >
+                    Nama:
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={authForm.name}
+                    onChange={handleAuthInputChange}
+                    placeholder="Siapa namamu?"
+                    className="w-full bg-[#EBE0D0] text-[#8C6F5A] placeholder-[#8C6F5A]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 border border-transparent focus:border-[#F3E8D6]/30 transition-all font-medium text-lg"
+                    required={isRegisterMode}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label
+                  className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-2xl"
+                  style={{ fontFamily: "'Knewave', cursive" }}
+                >
+                  Email:
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={authForm.email}
+                  onChange={handleAuthInputChange}
+                  placeholder="Alamat email aktif..."
+                  className="w-full bg-[#EBE0D0] text-[#8C6F5A] placeholder-[#8C6F5A]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 border border-transparent focus:border-[#F3E8D6]/30 transition-all font-medium text-lg"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-2xl"
+                  style={{ fontFamily: "'Knewave', cursive" }}
+                >
+                  Password:
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={authForm.password}
+                  onChange={handleAuthInputChange}
+                  placeholder="Biar aman diisi passwordnya..."
+                  className="w-full bg-[#EBE0D0] text-[#8C6F5A] placeholder-[#8C6F5A]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 border border-transparent focus:border-[#F3E8D6]/30 transition-all font-medium text-lg"
+                  required
+                />
+              </div>
+
+              {/* Login/Register Button */}
+              <button
+                type="submit"
+                disabled={isAuthLoading}
+                className={`bg-[#EBE0D0] text-[#8C6F5A] w-full py-4 rounded-full font-bold text-2xl transition-transform drop-shadow-md mt-4 ${
+                  isAuthLoading
+                    ? "opacity-70 cursor-wait"
+                    : "hover:brightness-105 hover:scale-105"
+                }`}
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
+                {isAuthLoading
+                  ? "Memproses..."
+                  : isRegisterMode
+                    ? "Daftar Sekarang"
+                    : "Login"}
+              </button>
+
+              {/* Toggle Text */}
+              <p className="text-center text-[#F4EBD9] font-medium mt-2">
+                {isRegisterMode ? "Sudah punya akun? " : "Belum punya akun? "}
+                <button
+                  type="button"
+                  onClick={toggleAuthMode}
+                  className="underline hover:text-white transition-colors"
+                >
+                  {isRegisterMode ? "Login di sini" : "Daftar di sini"}
+                </button> 
+              </p>
+            </form>
           </div>
         </div>
       )}
