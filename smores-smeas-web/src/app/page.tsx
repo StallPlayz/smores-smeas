@@ -13,6 +13,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
 } from "react-icons/fa";
+import { useScrollReveal } from "../lib/useScrollReveal";
 interface Product {
   id: number;
   name: string;
@@ -87,12 +88,30 @@ export default function Home() {
   const [aboutStep, setAboutStep] = useState(0);
 
   const [isExploded, setIsExploded] = useState(false);
+  const heroReveal = useScrollReveal();
+  const aboutReveal = useScrollReveal();
+  const whyUsReveal = useScrollReveal();
+  const productsReveal = useScrollReveal();
+  const contactReveal = useScrollReveal();
 
+  {
+    /* S'mores animation timer */
+  }
   useEffect(() => {
     const interval = setInterval(() => {
       setIsExploded((prev) => !prev);
     }, 2500);
     return () => clearInterval(interval);
+  }, []);
+
+  {
+    /* Description scroll timer */
+  }
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAboutStep((prev) => (prev === 0 ? 1 : 0));
+    }, 5000);
+    return () => clearInterval(timer);
   }, []);
 
   const nextProduct = () => {
@@ -229,7 +248,14 @@ export default function Home() {
           }}
         />
         {/* Title Wrapper */}
-        <div className="relative flex flex-col items-center justify-center mt-12 md:mt-20 w-full">
+        <div
+          ref={heroReveal.ref}
+          className={`relative flex flex-col items-center justify-center mt-12 md:mt-20 w-full transition-all duration-1000 ease-out ${
+            heroReveal.isVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-12"
+          }`}
+        >
           {/* LAYER 1 (BACK): Solid "S'mores" Text */}
           <div className="absolute bottom-[55%] md:bottom-[85%] left-1/2 -translate-x-1/2 w-max z-0 pointer-events-none select-none">
             <h1
@@ -296,7 +322,14 @@ export default function Home() {
         id="about-us"
         className="relative py-24 bg-[#8C6F5A] relative overflow-hidden"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+        <div
+          ref={aboutReveal.ref}
+          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${
+            aboutReveal.isVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-12"
+          }`}
+        >
           {/* THE ABOUT US TITLE PILL */}
           <div className="bg-[#BFA28C] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
             <h2
@@ -381,7 +414,7 @@ export default function Home() {
                 >
                   {/* Paragraph 1 */}
                   <div className="w-full shrink-0 flex items-center pr-4">
-                    <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95">
+                    <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95 text-justify">
                       <strong
                         className="text-3xl text-[#EBE0D0] font-black tracking-wide pr-2"
                         style={{ fontFamily: "'Margarine', sans-serif" }}
@@ -392,14 +425,14 @@ export default function Home() {
                       momen penuh kehangatan. Kami memadukan pesona nostalgia
                       s'mores tradisional dengan inovasi modern, menghadirkan
                       harmoni sempurna antara marshmallow lembut, cokelat
-                      premium, dan biskuit renyah.
+                      premium, dan biskuit yang renyah.
                     </p>
                   </div>
 
                   {/* Paragraph 2 */}
                   <div className="w-full shrink-0 flex items-center pr-4">
-                    <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95">
-                      Misi kami sederhana: memberikan pengalaman menikmati
+                    <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95 text-justify">
+                      Misi kami sederhana: memberikan pengalaman dalam menikmati
                       camilan berkualitas tinggi yang praktis dan siap menemani
                       hari Anda. Setiap porsi diracik oleh tangan kreatif siswa
                       SMKN 1 Surabaya dengan dedikasi penuh untuk mengubah waktu
@@ -461,7 +494,14 @@ export default function Home() {
           position="top"
           type="marshmallow"
         />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+        <div
+          ref={whyUsReveal.ref}
+          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${
+            whyUsReveal.isVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-12"
+          }`}
+        >
           {/* THE WHY US TITLE PILL */}
           <div className="bg-[#A68A77] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
             <h2
@@ -555,7 +595,14 @@ export default function Home() {
           position="top"
           type="cracker"
         />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+        <div
+          ref={productsReveal.ref}
+          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${
+            productsReveal.isVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-12"
+          }`}
+        >
           {/* THE PRODUCT TITLE PILL */}
           <div className="bg-[#A98B76] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-24 shadow-md">
             <h2
@@ -598,16 +645,8 @@ export default function Home() {
                 <div className="relative flex items-center justify-center w-full h-[26rem] md:h-[26rem] overflow-visible">
                   {products.map((product, index) => {
                     const isActive = index === activeIndex;
-                    const isPrev =
-                      index ===
-                      (activeIndex === 0
-                        ? products.length - 1
-                        : activeIndex - 1);
-                    const isNext =
-                      index ===
-                      (activeIndex === products.length - 1
-                        ? 0
-                        : activeIndex + 1);
+                    const isPrev = index === activeIndex - 1;
+                    const isNext = index === activeIndex + 1;
 
                     return (
                       <div
@@ -714,7 +753,14 @@ export default function Home() {
           type="wave"
           flipHorizontal={true}
         />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+        <div
+          ref={contactReveal.ref}
+          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${
+            contactReveal.isVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-12"
+          }`}
+        >
           {/* THE CONTACT TITLE PILL */}
           <div className="bg-[#A68A77] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
             <h2
