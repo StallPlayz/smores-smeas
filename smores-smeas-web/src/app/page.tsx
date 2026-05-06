@@ -11,6 +11,36 @@ interface Product {
   stock: number;
 }
 
+const MeltyDivider = ({
+  colorClass,
+  position = "bottom",
+  flipHorizontal = false,
+}: {
+  colorClass: string;
+  position?: "top" | "bottom";
+  flipHorizontal?: boolean;
+}) => {
+  return (
+    <div
+      className={`absolute left-0 right-0 w-full overflow-hidden leading-none z-20 pointer-events-none ${
+        position === "bottom" ? "bottom-0 rotate-180" : "top-0"
+      } ${flipHorizontal ? "-scale-x-100" : ""}`}
+    >
+      <svg
+        className="relative block w-full h-[60px] md:h-[120px]"
+        viewBox="0 0 1200 120"
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M0,0 V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
+          className={colorClass}
+          fill="currentColor"
+        ></path>
+      </svg>
+    </div>
+  );
+};
+
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,12 +64,9 @@ export default function Home() {
   const [isExploded, setIsExploded] = useState(false);
 
   useEffect(() => {
-    // This timer flips the 'isExploded' switch every 2.5 seconds
     const interval = setInterval(() => {
       setIsExploded((prev) => !prev);
     }, 2500);
-
-    // Cleanup the interval if the component unmounts
     return () => clearInterval(interval);
   }, []);
 
@@ -80,7 +107,7 @@ export default function Home() {
   }, [BACKEND_URL]);
 
   return (
-    <div className="min-h-screen max-w-screen overflow-hidden bg-[#bfa28c] text-gray-800 font-sans">
+    <div className="min-h-screen max-w-screen overflow-hidden bg-[#bfa28c] text-gray-800 font-sans select-none">
       <Head>
         <title>Smores Smeas | Deliciously Crafted</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -95,7 +122,7 @@ export default function Home() {
         />
       </Head>
 
-      {/* HEADER WRAPPER - Invisible layer holding both navigation elements */}
+      {/* HEADER WRAPPER */}
       <header className="fixed w-full z-50 top-0 pointer-events-none">
         <nav className="flex justify-center drop-shadow-md pt-4 px-4">
           <div className="relative bg-[#babf94] w-full md:w-[80%] max-w-xl rounded-[2.5rem] px-4 py-4 flex justify-center items-center pointer-events-auto">
@@ -121,7 +148,7 @@ export default function Home() {
                 About Us
               </a>
               <a
-                href="#about-product"
+                href="#why-us"
                 className="hover:text-[#5C3D2E] transition-colors drop-shadow-sm"
               >
                 Why Us?
@@ -164,7 +191,7 @@ export default function Home() {
         id="home"
         className="pt-32 pb-12 flex flex-col items-center justify-center min-h-screen relative overflow-hidden"
       >
-        {/* Quick font import fix for Next.js App Router */}
+        {/* Quick font import fix for Next.js App Router (will be changed) */}
         <style
           dangerouslySetInnerHTML={{
             __html: `
@@ -173,7 +200,7 @@ export default function Home() {
           }}
         />
 
-        {/* This wrapper keeps the image and text glued together perfectly */}
+        {/* Title Wrapper */}
         <div className="relative flex flex-col items-center justify-center mt-12 md:mt-20 w-full">
           {/* LAYER 1 (BACK): Solid "S'mores" Text */}
           <div className="absolute bottom-[55%] md:bottom-[85%] left-1/2 -translate-x-1/2 w-max z-0 pointer-events-none select-none">
@@ -229,10 +256,12 @@ export default function Home() {
             Smeas
           </h2>
         </div>
+
+        {/* Melts DOWN into About Us (Dark Brown) */}
+        <MeltyDivider colorClass="text-[#8C6F5A]" position="bottom" />
       </section>
 
       {/* About Us Section */}
-      {/* Used a dark brown background to match the contrast in your Figma mockup */}
       <section
         id="about-us"
         className="py-24 bg-[#8C6F5A] relative overflow-hidden"
@@ -304,7 +333,6 @@ export default function Home() {
             </div>
 
             {/* Right Column: Text Content */}
-            {/* Using a handwritten/casual feeling style to match the vibes, with the exact text from your mockup */}
             <div className="text-[#F3E4C9] text-lg md:text-xl leading-relaxed text-center md:text-left font-medium drop-shadow-sm">
               <p>
                 S'mores Smeas lahir dari kecintaan kami terhadap cita rasa
@@ -326,48 +354,99 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Product */}
-      <section id="about-product" className="py-20 bg-[#F4F1EA]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12">
-            Why Our S'mores?
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="text-xl font-semibold mb-3 text-[#8B5A2B]">
-                Artisan Quality
+      {/* Why Us Section */}
+      <section id="why-us" className="py-24 bg-brown relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+          {/* THE WHY US TITLE PILL */}
+          <div className="bg-[#A68A77] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
+            <h2
+              className="text-4xl md:text-5xl text-[#F4EBD9] tracking-wider select-none"
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              Why Us?
+            </h2>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+            {/* Feature 1 */}
+            <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
+              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                <span className="text-3xl">✨</span>
+              </div>
+              <h3
+                className="text-[#F4EBD9] text-2xl tracking-wide mb-3"
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
+                Kualitas Premium
               </h3>
-              <p className="text-gray-600">
-                Handcrafted ingredients that ensure every bite is perfectly
-                balanced.
+              <p className="text-[#F3E4C9] opacity-90 font-medium leading-relaxed">
+                Bahan-bahan pilihan terbaik yang menjamin lelehan sempurna dan
+                rasa yang tak terlupakan.
               </p>
             </div>
-            <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="text-xl font-semibold mb-3 text-[#8B5A2B]">
-                Melted to Perfection
+
+            {/* Feature 2 */}
+            <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
+              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                <span className="text-3xl">🔥</span>
+              </div>
+              <h3
+                className="text-[#F4EBD9] text-2xl tracking-wide mb-3"
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
+                Tanpa Ribet
               </h3>
-              <p className="text-gray-600">
-                Our signature packaging ensures your treats are ready to enjoy
-                instantly.
+              <p className="text-[#F3E4C9] opacity-90 font-medium leading-relaxed">
+                Nikmati sensasi asyik campfire s'mores kapan saja, tanpa perlu
+                repot menyalakan api unggun.
               </p>
             </div>
-            <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="text-xl font-semibold mb-3 text-[#8B5A2B]">
-                Locally Sourced
+
+            {/* Feature 3 */}
+            <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
+              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                <span className="text-3xl">💸</span>
+              </div>
+              <h3
+                className="text-[#F4EBD9] text-2xl tracking-wide mb-3"
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
+                Harga Pelajar
               </h3>
-              <p className="text-gray-600">
-                Supporting local farmers and bakers to bring you the freshest
-                experience.
+              <p className="text-[#F3E4C9] opacity-90 font-medium leading-relaxed">
+                Kualitas rasa bintang lima, tapi harga tetap bersahabat dan aman
+                di kantong pelajar.
+              </p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
+              <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
+                <span className="text-3xl">❤️</span>
+              </div>
+              <h3
+                className="text-[#F4EBD9] text-2xl tracking-wide mb-3"
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
+                Dibuat Dgn Cinta
+              </h3>
+              <p className="text-[#F3E4C9] opacity-90 font-medium leading-relaxed">
+                Setiap porsi diracik dan disiapkan langsung oleh tangan-tangan
+                kreatif tim Smeas.
               </p>
             </div>
           </div>
         </div>
+
+        {/* Melts DOWN into Products (Dark Brown) */}
+        <MeltyDivider colorClass="text-[#8C6F5A]" position="bottom" />
       </section>
 
       {/* Product Section */}
       <section
         id="products"
-        className="py-24 bg-[#F3E8D6] relative overflow-hidden"
+        className="py-24 bg-[#8C6F5A] relative overflow-hidden"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
           {/* THE PRODUCT TITLE PILL */}
@@ -404,10 +483,8 @@ export default function Home() {
                 </button>
 
                 {/* The Products Showcase */}
-                {/* CHANGED: Switched to a relative container with fixed height so cards can stack and slide over each other */}
                 <div className="relative flex items-center justify-center w-full h-[26rem] md:h-[26rem] overflow-visible">
                   {products.map((product, index) => {
-                    // Determine if this card is active, prev, or next
                     const isActive = index === activeIndex;
                     const isPrev =
                       index ===
@@ -427,7 +504,6 @@ export default function Home() {
                           if (isActive) openModal(product);
                           else if (isPrev || isNext) setActiveIndex(index);
                         }}
-                        // CHANGED: Cards are now 'absolute'. We use 'translate-x' to smoothly slide them left and right!
                         className={`absolute transition-all duration-700 ease-in-out cursor-pointer flex flex-col items-center justify-center bg-[#A98B76] rounded-[2rem] md:rounded-[3rem] ${
                           isActive
                             ? "w-64 h-[22rem] md:w-80 md:h-[26rem] z-20 scale-100 opacity-100 shadow-xl translate-x-0"
@@ -435,8 +511,7 @@ export default function Home() {
                               ? "w-48 h-56 md:w-56 md:h-64 z-10 scale-90 opacity-50 shadow-md -translate-x-36 md:-translate-x-72 hidden sm:flex"
                               : isNext
                                 ? "w-48 h-56 md:w-56 md:h-64 z-10 scale-90 opacity-50 shadow-md translate-x-36 md:translate-x-72 hidden sm:flex"
-                                : // THE FIX: Hidden cards don't delete, they fade to 0 opacity and scale down behind the center!
-                                  "w-48 h-56 md:w-56 md:h-64 z-0 scale-75 opacity-0 pointer-events-none translate-x-0 hidden sm:flex"
+                                : "w-48 h-56 md:w-56 md:h-64 z-0 scale-75 opacity-0 pointer-events-none translate-x-0 hidden sm:flex"
                         }`}
                       >
                         {/* Image Drip built directly into the active card */}
@@ -464,7 +539,6 @@ export default function Home() {
                         </div>
 
                         {/* Product Details (Only visible on active card) */}
-                        {/* Added transition-opacity so the text fades in nicely when it reaches the center */}
                         <div
                           className={`mt-20 md:mt-24 flex flex-col items-center transition-opacity duration-500 ${isActive ? "opacity-100" : "opacity-0"}`}
                         >
@@ -513,68 +587,135 @@ export default function Home() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-24 bg-[#2C1E16] text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Get in Touch</h2>
-            <p className="text-gray-400">
-              Have a question about an order or want to stock our products? Let
-              us know.
-            </p>
+      <section
+        id="contact"
+        className="py-24 bg-[#4A2E1B] relative overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+          {/* THE CONTACT TITLE PILL */}
+          <div className="bg-[#A68A77] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
+            <h2
+              className="text-4xl md:text-5xl text-[#F4EBD9] tracking-wider select-none"
+              style={{ fontFamily: "'Knewave', cursive" }}
+            >
+              Contact Us
+            </h2>
           </div>
 
-          <form className="space-y-6 bg-white/5 p-8 rounded-2xl border border-white/10">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium mb-2"
-                >
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  className="w-full bg-black/20 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2691E]"
-                  placeholder="Your Name"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium mb-2"
-                >
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full bg-black/20 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2691E]"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-            <div>
-              <label
-                htmlFor="message"
-                className="block text-sm font-medium mb-2"
+          {/* 2-Column Layout: Info on Left, Form on Right */}
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start w-full max-w-5xl">
+            {/* Left Column: Direct Info & Copy */}
+            <div className="text-[#F3E8D6]">
+              <h3
+                className="text-3xl md:text-4xl mb-6 tracking-wide drop-shadow-sm"
+                style={{ fontFamily: "'Knewave', cursive" }}
               >
-                Message
-              </label>
-              <textarea
-                id="message"
-                rows={4}
-                className="w-full bg-black/20 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#D2691E]"
-                placeholder="How can we help?"
-              ></textarea>
+                Sapa Kami!
+              </h3>
+              <p className="text-lg opacity-90 mb-10 font-medium leading-relaxed">
+                Mau pesan dalam jumlah besar untuk acara sekolah, tanya
+                ketersediaan stok hari ini, atau sekadar ngobrol soal s'mores?
+                Tim Smeas selalu siap membantu!
+              </p>
+
+              {/* Contact Details List */}
+              <div className="space-y-8">
+                <div className="flex items-center gap-5 group">
+                  <div className="w-14 h-14 bg-[#8C6F5A] rounded-full flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                    📍
+                  </div>
+                  <div>
+                    <p className="font-black text-lg tracking-wide">
+                      Basecamp Kami
+                    </p>
+                    <p className="opacity-80 font-medium">
+                      SMKN 1 Surabaya, Jawa Timur
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-5 group">
+                  <div className="w-14 h-14 bg-[#8C6F5A] rounded-full flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                    ⏰
+                  </div>
+                  <div>
+                    <p className="font-black text-lg tracking-wide">
+                      Jam Operasional
+                    </p>
+                    <p className="opacity-80 font-medium">
+                      Senin - Jumat | 08:00 - 14:00 WIB
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-5 group">
+                  <div className="w-14 h-14 bg-[#8C6F5A] rounded-full flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                    📱
+                  </div>
+                  <div>
+                    <p className="font-black text-lg tracking-wide">
+                      WhatsApp (Fast Response)
+                    </p>
+                    <p className="opacity-80 font-medium">+62 859-1839-82879</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <button
-              type="submit"
-              className="w-full bg-[#D2691E] text-white font-bold py-4 rounded-lg hover:bg-[#b05615] transition-colors"
-            >
-              Send Message
-            </button>
-          </form>
+
+            {/* Right Column: The Form */}
+            <div className="bg-[#8C6F5A] p-8 md:p-10 rounded-[2.5rem] shadow-2xl border border-white/10 relative">
+              <img
+                src="/product-drip.webp"
+                alt="Form Drip"
+                className="absolute -top-6 -right-4 w-16 h-auto pointer-events-none drop-shadow-sm opacity-80"
+              />
+
+              <form
+                className="flex flex-col gap-6"
+                onSubmit={(e) => e.preventDefault()}
+              >
+                <div>
+                  <label className="block text-[#F3E8D6] font-bold mb-2 ml-4 uppercase tracking-wider text-sm">
+                    Nama Kamu
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Siapa namamu?"
+                    className="w-full bg-[#A68A77]/40 text-[#F3E8D6] placeholder-[#F3E8D6]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 border border-transparent focus:border-[#F3E8D6]/30 transition-all font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#F3E8D6] font-bold mb-2 ml-4 uppercase tracking-wider text-sm">
+                    WhatsApp / Email
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Biar gampang dihubungin balik..."
+                    className="w-full bg-[#A68A77]/40 text-[#F3E8D6] placeholder-[#F3E8D6]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 border border-transparent focus:border-[#F3E8D6]/30 transition-all font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#F3E8D6] font-bold mb-2 ml-4 uppercase tracking-wider text-sm">
+                    Pesan Manismu
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Tulis pesanan, kritik, atau saranmu di sini..."
+                    className="w-full bg-[#A68A77]/40 text-[#F3E8D6] placeholder-[#F3E8D6]/60 px-6 py-4 rounded-[2rem] outline-none focus:ring-4 focus:ring-[#BFA28C]/50 border border-transparent focus:border-[#F3E8D6]/30 transition-all resize-none font-medium"
+                  ></textarea>
+                </div>
+
+                <button
+                  className="bg-[#EBE0D0] text-[#8C6F5A] w-full py-4 rounded-full font-black text-2xl hover:brightness-105 hover:scale-[1.02] transition-all drop-shadow-lg mt-4"
+                  style={{ fontFamily: "'Knewave', cursive" }}
+                >
+                  Kirim Pesan
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -676,7 +817,7 @@ export default function Home() {
               The Team
             </h2>
             <p className="text-xl opacity-90 font-medium">
-              Kelompok 1 - S'mores Smeas
+              Kelompok 1 - S'mores Smeas / SMK Negeri 1 Surabaya
             </p>
           </div>
 
@@ -783,7 +924,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* --- NEW PROFESSIONAL LINKS SECTION --- */}
+          {/* --- LINKS SECTION --- */}
           <div className="border-t-2 border-[#F4EBD9]/20 pt-16 pb-12 mt-16 flex flex-col lg:flex-row justify-between gap-12">
             {/* Brand & Mission */}
             <div className="lg:w-1/3">
