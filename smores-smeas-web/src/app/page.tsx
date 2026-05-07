@@ -90,6 +90,64 @@ export default function Home() {
 
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [isContactLoading, setIsContactLoading] = useState(false);
+  const [contactFeedback, setContactFeedback] = useState<{
+    type: "success" | "error" | null;
+    text: string;
+  }>({ type: null, text: "" });
+
+  const handleContactInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setContactForm({ ...contactForm, [e.target.name]: e.target.value });
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsContactLoading(true);
+    setContactFeedback({ type: null, text: "" });
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(contactForm),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setContactFeedback({
+          type: "success",
+          text: "Pesanmu berhasil dikirim! Kami akan segera membalasnya.",
+        });
+        setContactForm({ name: "", email: "", phone: "", message: "" }); // Reset form
+      } else {
+        // Handle Laravel validation errors gracefully
+        const errorMsg =
+          data.message ||
+          "Gagal mengirim pesan. Pastikan semua data diisi dengan benar (Pesan minimal 10 karakter).";
+        setContactFeedback({ type: "error", text: errorMsg });
+      }
+    } catch (error) {
+      console.error("Contact error:", error);
+      setContactFeedback({
+        type: "error",
+        text: "Terjadi kesalahan pada jaringan. Silakan coba lagi.",
+      });
+    } finally {
+      setIsContactLoading(false);
+    }
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -262,11 +320,9 @@ export default function Home() {
         if (response.ok) {
           if (result.data && Array.isArray(result.data)) {
             setProducts(result.data);
-          }
-          else if (Array.isArray(result)) {
+          } else if (Array.isArray(result)) {
             setProducts(result);
-          }
-          else if (result.status === "success") {
+          } else if (result.status === "success") {
             setProducts(result.data);
           }
         }
@@ -987,48 +1043,111 @@ export default function Home() {
                 className="absolute -top-6 -right-4 w-16 h-auto pointer-events-none drop-shadow-sm opacity-80"
               />
 
+              {contactFeedback.type && (
+                <div
+                  className={`mb-6 p-4 rounded-xl text-center font-bold text-lg transition-all duration-300 ${
+                    contactFeedback.type === "success"
+                      ? "bg-green-100 text-green-800 border-2 border-green-300"
+                      : "bg-red-100 text-red-800 border-2 border-red-300"
+                  }`}
+                >
+                  {contactFeedback.text}
+                </div>
+              )}
+
               <form
                 className="flex flex-col gap-6"
-                onSubmit={(e) => e.preventDefault()}
+                onSubmit={handleContactSubmit}
               >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label
+                      className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-xl"
+                      style={{ fontFamily: "'Knewave', cursive" }}
+                    >
+                      Nama:
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={contactForm.name}
+                      onChange={handleContactInputChange}
+                      placeholder="Nama Lengkap"
+                      required
+                      minLength={3}
+                      className="w-full bg-[#EBE0D0] text-[#8C6F5A] placeholder-[#8C6F5A]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 transition-all font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-xl"
+                      style={{ fontFamily: "'Knewave', cursive" }}
+                    >
+                      Email:
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={contactForm.email}
+                      onChange={handleContactInputChange}
+                      placeholder="Alamat Email"
+                      required
+                      className="w-full bg-[#EBE0D0] text-[#8C6F5A] placeholder-[#8C6F5A]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 transition-all font-medium"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-[#F3E8D6] font-bold mb-2 ml-4 uppercase tracking-wider text-sm">
-                    Nama Kamu
+                  <label
+                    className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-xl"
+                    style={{ fontFamily: "'Knewave', cursive" }}
+                  >
+                    Nomor HP (Opsional):
                   </label>
                   <input
                     type="text"
-                    placeholder="Siapa namamu?"
-                    className="w-full bg-[#A68A77]/40 text-[#F3E8D6] placeholder-[#F3E8D6]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 border border-transparent focus:border-[#F3E8D6]/30 transition-all font-medium"
+                    name="phone"
+                    value={contactForm.phone}
+                    onChange={handleContactInputChange}
+                    maxLength={15}
+                    placeholder="08xxxxxxxxxx"
+                    className="w-full bg-[#EBE0D0] text-[#8C6F5A] placeholder-[#8C6F5A]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 transition-all font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#F3E8D6] font-bold mb-2 ml-4 uppercase tracking-wider text-sm">
-                    WhatsApp / Email
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Biar gampang dihubungin balik..."
-                    className="w-full bg-[#A68A77]/40 text-[#F3E8D6] placeholder-[#F3E8D6]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 border border-transparent focus:border-[#F3E8D6]/30 transition-all font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[#F3E8D6] font-bold mb-2 ml-4 uppercase tracking-wider text-sm">
-                    Pesan Manismu
+                  <label
+                    className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-xl"
+                    style={{ fontFamily: "'Knewave', cursive" }}
+                  >
+                    Pesan:
                   </label>
                   <textarea
+                    name="message"
+                    value={contactForm.message}
+                    onChange={handleContactInputChange}
+                    placeholder="Tuliskan pesan, kritik, atau saranmu di sini..."
+                    required
+                    minLength={10}
                     rows={4}
-                    placeholder="Tulis pesanan, kritik, atau saranmu di sini..."
-                    className="w-full bg-[#A68A77]/40 text-[#F3E8D6] placeholder-[#F3E8D6]/60 px-6 py-4 rounded-[2rem] outline-none focus:ring-4 focus:ring-[#BFA28C]/50 border border-transparent focus:border-[#F3E8D6]/30 transition-all resize-none font-medium"
+                    className="w-full bg-[#EBE0D0] text-[#8C6F5A] placeholder-[#8C6F5A]/60 px-6 py-4 rounded-[2rem] outline-none focus:ring-4 focus:ring-[#BFA28C]/50 transition-all font-medium resize-none"
                   ></textarea>
                 </div>
 
+                {/* --- UPDATE SUBMIT BUTTON WITH LOADING STATE --- */}
                 <button
-                  className="bg-[#EBE0D0] text-[#8C6F5A] w-full py-4 rounded-full font-black text-2xl hover:brightness-105 hover:scale-[1.02] transition-all drop-shadow-lg mt-4"
+                  type="submit"
+                  disabled={isContactLoading}
+                  className={`mt-4 bg-[#4A2E1B] text-[#F4EBD9] w-full py-4 rounded-full font-bold text-2xl transition-transform drop-shadow-md ${
+                    isContactLoading
+                      ? "opacity-70 cursor-wait"
+                      : "hover:brightness-110 hover:scale-[1.02]"
+                  }`}
                   style={{ fontFamily: "'Knewave', cursive" }}
                 >
-                  Kirim Pesan
+                  {isContactLoading
+                    ? "Mengirim Pesan..."
+                    : "Kirim Pesan Sekarang"}
                 </button>
               </form>
             </div>
