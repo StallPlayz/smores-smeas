@@ -25,7 +25,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Resources
 Route::apiResource('/products', ProductController::class);
-Route::apiResource('/products', ProductController::class)->middleware('auth:sanctum')->only(['store', 'update', 'destroy']);
+Route::apiResource('/messages', MessageController::class);
+Route::apiResource('/orders', OrderController::class);
 
 // ====== ADMIN ROUTES ======
 
