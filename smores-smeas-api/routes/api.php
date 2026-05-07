@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // ====== PUBLIC ROUTES ======
@@ -16,31 +17,23 @@ Route::prefix('auth')->group(function () {
 });
 
 // Public product listing
-Route::get('/products', [ProductController::class, 'index']);
-Route::get('/products/{product}', [ProductController::class, 'show']);
+Route::apiResource('/products', ProductController::class)->only(['index', 'show']);
+Route::apiResource('/messages', MessageController::class)->only('store');
+Route::apiResource('/orders', OrderController::class)->only('store');
 
 // ====== ADMIN ROUTES ======
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     // Product management
-    Route::post('/products', [ProductController::class, 'store']);
-    Route::put('/products/{product}', [ProductController::class, 'update']);
-    Route::patch('/products/{product}', [ProductController::class, 'update']);
-    Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+    Route::apiResource('/products', ProductController::class)->only(['store', 'update', 'destroy']);
+
 
     // Message management
-    Route::get('/messages', [MessageController::class, 'index']);
-    Route::post('/messages', [MessageController::class, 'store']);
-    Route::put('/messages/{message}', [MessageController::class, 'update']);
-    Route::patch('/messages/{message}', [MessageController::class, 'update']);
-    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+    Route::apiResource('/messages', MessageController::class)->only(['index', 'show']);
+
 
     // Order management
-    Route::get('/orders', [OrderController::class, 'index']);
-    Route::get('/orders/{order}', [OrderController::class, 'show']);
-    Route::post('/orders', [OrderController::class, 'store']);
-    Route::put('/orders/{order}', [OrderController::class, 'update']);
-    Route::patch('/orders/{order}', [OrderController::class, 'update']);
-    Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
-});
+    Route::apiResource('/orders', OrderController::class)->only(['index', 'show']);
 
+
+});

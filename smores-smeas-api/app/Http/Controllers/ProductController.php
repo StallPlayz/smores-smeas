@@ -15,11 +15,11 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $prodcuts = Product::where('stock', '>', 0)->get();
+        $products = Product::withoutGlobalScopes()->where('stock', '>', 0)->get();
 
         return response()->json([
             'status' => 'success',
-            'data' => $prodcuts
+            'data' => $products
         ]);
     }
 
