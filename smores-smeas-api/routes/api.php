@@ -5,42 +5,37 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // ====== PUBLIC ROUTES ======
-
-// Auth routes
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 });
 
+// Customers can view products and send messages
+Route::apiResource('/products', ProductController::class)->only(['index', 'show']);
+Route::apiResource('/messages', MessageController::class)->only(['store']);
+
+
+// ====== PROTECTED ADMIN ROUTES ======
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+    // User Management
     Route::get('/users', [UserController::class, 'index']);
     Route::put('/users/{id}/role', [UserController::class, 'updateRole']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
-});
 
-// Resources
-Route::apiResource('/products', ProductController::class);
-Route::apiResource('/messages', MessageController::class);
-Route::apiResource('/orders', OrderController::class);
+    // Product Management (Create, Update, Delete)
+    Route::post('/products', [ProductController::class, 'store']);
+    Route::put('/products/{id}', [ProductController::class, 'update']);
+    Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
-// ====== ADMIN ROUTES ======
-
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-    // Product management
-    Route::apiResource('/products', ProductController::class)->only(['store', 'update', 'destroy']);
-
-
-    // Message management
-    Route::apiResource('/messages', MessageController::class)->only(['index', 'show']);
-
-
-    // Order management
+    // Order Management & Analytics
+    Route::get('/orders/analytics', [OrderController::class, 'analytics']);
     Route::apiResource('/orders', OrderController::class)->only(['index', 'show']);
 
-
+    // Read Messages
+    Route::apiResource('/messages', MessageController::class)->only(['index', 'show', 'destroy']);
 });
