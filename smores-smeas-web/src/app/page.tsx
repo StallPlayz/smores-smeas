@@ -2,6 +2,7 @@
 
 import Head from "next/head";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   FaStar,
   FaFire,
@@ -67,6 +68,7 @@ const ThemeDivider = ({
 };
 
 export default function Home() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,6 +88,7 @@ export default function Home() {
     id: number;
     name: string;
     email: string;
+    role?: string;
   } | null>(null);
 
   const [isAuthLoading, setIsAuthLoading] = useState(false);
@@ -152,9 +155,14 @@ export default function Home() {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+
+      if (parsedUser.role === "admin") {
+        router.push("/admin");
+      }
     }
-  }, []);
+  }, [router]);
 
   const handleAuthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAuthForm({ ...authForm, [e.target.name]: e.target.value });
@@ -230,6 +238,10 @@ export default function Home() {
         localStorage.setItem("user", JSON.stringify(data.user));
         setUser(data.user);
         closeLoginModal();
+
+        if (data.user.role === "admin") {
+          router.push("/admin");
+        }
       } else {
         const errorMsg =
           data.message ||
