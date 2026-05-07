@@ -6,7 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $fillable = ['user_id', 'product_id', 'quantity', 'unique_id'];
+    protected $fillable = [
+        'user_id',
+        'product_id',
+        'guest_name',
+        'guest_phone',
+        'quantity',
+        'message',
+        'total_price',
+        'status',
+        'unique_id'
+    ];
 
     /**
      * Boot function dari Laravel Eloquent.

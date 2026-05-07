@@ -16,7 +16,7 @@ Route::prefix('auth')->group(function () {
 // Customers can view products and send messages
 Route::apiResource('/products', ProductController::class)->only(['index', 'show']);
 Route::apiResource('/messages', MessageController::class)->only(['store']);
-
+Route::post('/orders', [OrderController::class, 'store']);
 
 // ====== PROTECTED ADMIN ROUTES ======
 Route::middleware('auth:sanctum')->group(function () {
