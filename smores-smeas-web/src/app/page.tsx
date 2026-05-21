@@ -1,3 +1,5 @@
+// smores-smeas-web/src/app/page.tsx
+
 "use client";
 
 import Head from "next/head";
@@ -16,6 +18,10 @@ import {
 } from "react-icons/fa";
 import { useScrollReveal } from "../lib/useScrollReveal";
 import Swal from "sweetalert2";
+
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
 interface Product {
   id: number;
   name: string;
@@ -73,9 +79,29 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // --- USER STATE ---
+  const [user, setUser] = useState<{
+    id: number;
+    name: string;
+    email: string;
+    role?: string;
+  } | null>(null);
+
+  // --- MODAL STATES ---
   const [modalProduct, setModalProduct] = useState<Product | null>(null);
   const [isProductAnimVisible, setIsProductAnimVisible] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // --- ORDER FORM STATES ---
+  const [orderForm, setOrderForm] = useState({
+    quantity: 1,
+    message: "",
+    guest_name: "",
+    guest_phone: "",
+  });
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+
+  // --- AUTH MODAL STATES ---
   const [isLoginModalMounted, setIsLoginModalMounted] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
@@ -85,16 +111,10 @@ export default function Home() {
     email: "",
     password: "",
   });
-
-  const [user, setUser] = useState<{
-    id: number;
-    name: string;
-    email: string;
-    role?: string;
-  } | null>(null);
-
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
+
+  // --- CONTACT FORM STATES ---
   const [contactForm, setContactForm] = useState({
     name: "",
     email: "",
@@ -107,6 +127,70 @@ export default function Home() {
     text: string;
   }>({ type: null, text: "" });
 
+  // --- ANIMATION / UI STATES ---
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [aboutStep, setAboutStep] = useState(0);
+  const [isExploded, setIsExploded] = useState(false);
+  const heroReveal = useScrollReveal();
+  const aboutReveal = useScrollReveal();
+  const whyUsReveal = useScrollReveal();
+  const productsReveal = useScrollReveal();
+  const contactReveal = useScrollReveal();
+
+  // --- DATA FETCHING ---
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/products`);
+      const result = await response.json();
+
+      if (response.ok) {
+        if (result.data && Array.isArray(result.data)) {
+          setProducts(result.data);
+        } else if (Array.isArray(result)) {
+          setProducts(result);
+        } else if (result.status === "success") {
+          setProducts(result.data);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    document.documentElement.style.scrollBehavior = "smooth";
+    return () => {
+      document.documentElement.style.scrollBehavior = "auto";
+    };
+  }, []);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      if (parsedUser.role === "admin") router.push("/admin");
+    }
+  }, [router]);
+
+  // --- TIMERS ---
+  useEffect(() => {
+    const interval = setInterval(() => setIsExploded((prev) => !prev), 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(
+      () => setAboutStep((prev) => (prev === 0 ? 1 : 0)),
+      5000,
+    );
+    return () => clearInterval(timer);
+  }, []);
+
+  // --- HANDLERS ---
   const handleContactInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -135,16 +219,14 @@ export default function Home() {
           type: "success",
           text: "Pesanmu berhasil dikirim! Kami akan segera membalasnya.",
         });
-        setContactForm({ name: "", email: "", phone: "", message: "" }); // Reset form
+        setContactForm({ name: "", email: "", phone: "", message: "" });
       } else {
-        // Handle Laravel validation errors gracefully
         const errorMsg =
           data.message ||
-          "Gagal mengirim pesan. Pastikan semua data diisi dengan benar (Pesan minimal 10 karakter).";
+          "Gagal mengirim pesan. Pastikan semua data diisi dengan benar.";
         setContactFeedback({ type: "error", text: errorMsg });
       }
     } catch (error) {
-      console.error("Contact error:", error);
       setContactFeedback({
         type: "error",
         text: "Terjadi kesalahan pada jaringan. Silakan coba lagi.",
@@ -154,64 +236,74 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
+  const handleOrderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalProduct) return;
 
-      if (parsedUser.role === "admin") {
-        router.push("/admin");
+    setIsSubmittingOrder(true);
+
+    const payload = {
+      product_id: modalProduct.id,
+      quantity: orderForm.quantity,
+      message: orderForm.message,
+      guest_name: user ? "" : orderForm.guest_name,
+      guest_phone: user ? "" : orderForm.guest_phone,
+    };
+
+    const token = localStorage.getItem("token");
+    const headers: any = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/orders`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "Pesanan berhasil dicatat!",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+        });
+        closeModal();
+        fetchProducts(); // Refresh live stock!
+      } else {
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "error",
+          title: data.message || "Gagal membuat pesanan.",
+          showConfirmButton: false,
+          timer: 4000,
+        });
       }
+    } catch (error) {
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "error",
+        title: "Terjadi kesalahan jaringan",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } finally {
+      setIsSubmittingOrder(false);
     }
-  }, [router]);
+  };
 
   const handleAuthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAuthForm({ ...authForm, [e.target.name]: e.target.value });
-  };
-
-  const openModal = (product: Product) => {
-    setModalProduct(product);
-    setIsModalOpen(true);
-    setTimeout(() => setIsProductAnimVisible(true), 10);
-  };
-
-  const closeModal = () => {
-    setIsProductAnimVisible(false);
-    setTimeout(() => {
-      setIsModalOpen(false);
-      setModalProduct(null);
-    }, 300);
-  };
-
-  const openLoginModal = () => {
-    setIsAuthLoading(false);
-    setIsRegisterMode(false);
-    setAuthForm({ name: "", email: "", password: "" });
-    setIsFormAnimVisible(true);
-
-    setIsLoginModalMounted(true);
-    setTimeout(() => setIsLoginModalOpen(true), 10);
-  };
-
-  const closeLoginModal = () => {
-    setIsLoginModalOpen(false);
-
-    setTimeout(() => {
-      setIsLoginModalMounted(false);
-      setIsRegisterMode(false);
-      setAuthForm({ name: "", email: "", password: "" });
-      setIsAuthLoading(false);
-    }, 300);
-  };
-
-  const toggleAuthMode = () => {
-    setIsFormAnimVisible(false);
-
-    setTimeout(() => {
-      setIsRegisterMode((prev) => !prev);
-      setIsFormAnimVisible(true);
-    }, 300);
   };
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
@@ -244,10 +336,7 @@ export default function Home() {
         localStorage.setItem("user", JSON.stringify(data.user));
         setUser(data.user);
         closeLoginModal();
-
-        if (data.user.role === "admin") {
-          router.push("/admin");
-        }
+        if (data.user.role === "admin") router.push("/admin");
       } else {
         const errorMsg =
           data.message ||
@@ -255,8 +344,9 @@ export default function Home() {
         alert(errorMsg);
       }
     } catch (error) {
-      console.error("Auth error:", error);
       alert("An error occurred. Please try again.");
+    } finally {
+      setIsAuthLoading(false);
     }
   };
 
@@ -281,82 +371,56 @@ export default function Home() {
     }
   };
 
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [aboutStep, setAboutStep] = useState(0);
+  const openModal = (product: Product) => {
+    setModalProduct(product);
+    // Reset order form every time modal opens
+    setOrderForm({ quantity: 1, message: "", guest_name: "", guest_phone: "" });
+    setIsModalOpen(true);
+    setTimeout(() => setIsProductAnimVisible(true), 10);
+  };
 
-  const [isExploded, setIsExploded] = useState(false);
-  const heroReveal = useScrollReveal();
-  const aboutReveal = useScrollReveal();
-  const whyUsReveal = useScrollReveal();
-  const productsReveal = useScrollReveal();
-  const contactReveal = useScrollReveal();
+  const closeModal = () => {
+    setIsProductAnimVisible(false);
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setModalProduct(null);
+    }, 300);
+  };
 
-  {
-    /* S'mores animation timer */
-  }
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIsExploded((prev) => !prev);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, []);
+  const openLoginModal = () => {
+    setIsAuthLoading(false);
+    setIsRegisterMode(false);
+    setAuthForm({ name: "", email: "", password: "" });
+    setIsFormAnimVisible(true);
+    setIsLoginModalMounted(true);
+    setTimeout(() => setIsLoginModalOpen(true), 10);
+  };
 
-  {
-    /* Description scroll timer */
-  }
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setAboutStep((prev) => (prev === 0 ? 1 : 0));
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    setTimeout(() => {
+      setIsLoginModalMounted(false);
+      setIsRegisterMode(false);
+      setAuthForm({ name: "", email: "", password: "" });
+      setIsAuthLoading(false);
+    }, 300);
+  };
+
+  const toggleAuthMode = () => {
+    setIsFormAnimVisible(false);
+    setTimeout(() => {
+      setIsRegisterMode((prev) => !prev);
+      setIsFormAnimVisible(true);
+    }, 300);
+  };
 
   const nextProduct = () => {
-    if (activeIndex < products.length - 1) {
-      setActiveIndex((prev) => prev + 1);
-    }
+    if (activeIndex < products.length - 1) setActiveIndex((prev) => prev + 1);
   };
 
   const prevProduct = () => {
-    if (activeIndex > 0) {
-      setActiveIndex((prev) => prev - 1);
-    }
+    if (activeIndex > 0) setActiveIndex((prev) => prev - 1);
   };
-
-  const BACKEND_URL =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-
-  useEffect(() => {
-    document.documentElement.style.scrollBehavior = "smooth";
-
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/products`);
-        const result = await response.json();
-
-        if (response.ok) {
-          if (result.data && Array.isArray(result.data)) {
-            setProducts(result.data);
-          } else if (Array.isArray(result)) {
-            setProducts(result);
-          } else if (result.status === "success") {
-            setProducts(result.data);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch products:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-
-    return () => {
-      document.documentElement.style.scrollBehavior = "auto";
-    };
-  }, [BACKEND_URL]);
 
   return (
     <div className="min-h-screen max-w-screen overflow-hidden bg-[#bfa28c] text-gray-800 font-sans select-none">
@@ -378,14 +442,11 @@ export default function Home() {
       <header className="fixed w-full z-50 top-0 pointer-events-none">
         <nav className="flex justify-center drop-shadow-md pt-4 px-4">
           <div className="relative bg-[#babf94] w-full md:w-[80%] max-w-xl rounded-[2.5rem] px-4 py-4 flex justify-center items-center pointer-events-auto">
-            {/* Main Brand Drip */}
             <img
               src="/drip-right.webp"
               alt="Brand Drip"
               className="absolute -right-2 md:right-4 -bottom-12 w-16 h-auto pointer-events-none -mt-[1px]"
             />
-
-            {/* Main Links */}
             <div className="flex items-center space-x-6 md:space-x-12 text-white font-bold text-sm md:text-base">
               <a
                 href="#home"
@@ -421,7 +482,6 @@ export default function Home() {
           </div>
         </nav>
 
-        {/* 2. FLOATING LOGIN BUTTON (Top Right) */}
         <div className="absolute top-6 right-4 md:right-8 pointer-events-auto drop-shadow-md">
           <div className="relative">
             {user ? (
@@ -444,7 +504,6 @@ export default function Home() {
                 >
                   Login
                 </button>
-                {/* Small Login Drip */}
                 <img
                   src="/drip-small.webp"
                   alt="Small Drip"
@@ -456,29 +515,20 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section (Home) */}
+      {/* Hero Section */}
       <section
         id="home"
         className="pt-32 pb-12 flex flex-col items-center justify-center min-h-screen relative overflow-hidden"
       >
-        {/* Quick font import fix for Next.js App Router (will be changed) */}
         <style
           dangerouslySetInnerHTML={{
-            __html: `
-          @import url('https://fonts.googleapis.com/css2?family=Knewave&display=swap');
-        `,
+            __html: `@import url('https://fonts.googleapis.com/css2?family=Knewave&display=swap');`,
           }}
         />
-        {/* Title Wrapper */}
         <div
           ref={heroReveal.ref}
-          className={`relative flex flex-col items-center justify-center mt-12 md:mt-20 w-full transition-all duration-1000 ease-out ${
-            heroReveal.isVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-12"
-          }`}
+          className={`relative flex flex-col items-center justify-center mt-12 md:mt-20 w-full transition-all duration-1000 ease-out ${heroReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
         >
-          {/* LAYER 1 (BACK): Solid "S'mores" Text */}
           <div className="absolute bottom-[55%] md:bottom-[85%] left-1/2 -translate-x-1/2 w-max z-0 pointer-events-none select-none">
             <h1
               className="text-[7rem] md:text-[15rem] leading-none text-[#F3E4C9] text-center tracking-wider"
@@ -487,8 +537,6 @@ export default function Home() {
               S'mores
             </h1>
           </div>
-
-          {/* LAYER 2 (MIDDLE): The Signature Dish Image */}
           <div className="relative z-10 w-full max-w-lg md:max-w-3xl px-4 flex justify-center -mt-[16rem]">
             <img
               src="/smores.webp"
@@ -496,8 +544,6 @@ export default function Home() {
               className="w-full h-auto drop-shadow-2xl"
             />
           </div>
-
-          {/* LAYER 3 (FRONT): Outline "S'mores" Text + DRIPS */}
           <div className="absolute bottom-[55%] md:bottom-[85%] left-1/2 -translate-x-1/2 w-max z-20 pointer-events-none select-none">
             <h1
               className="text-[7rem] md:text-[15rem] leading-none text-transparent text-center tracking-wider"
@@ -508,23 +554,17 @@ export default function Home() {
             >
               S'mores
             </h1>
-
-            {/* TITLE DRIP LEFT */}
             <img
               src="/drip-title-left.webp"
               alt="Left Title Drip"
               className="absolute w-12 md:w-24 h-auto bottom-[5%] md:bottom-[-45%] left-[0%] md:left-[2%]"
             />
-
-            {/* TITLE DRIP RIGHT */}
             <img
               src="/drip-title-right.webp"
               alt="Right Title Drip"
               className="absolute w-12 md:w-24 h-auto bottom-[5%] md:bottom-[-59%] right-[2%] md:right-[4%]"
             />
           </div>
-
-          {/* LAYER 4 (FRONT BOTTOM): The "Smeas" Text */}
           <h2
             className="absolute z-20 text-[6rem] md:text-[12rem] leading-none text-[#EBE0D0] -mb-24 md:-mb-48 text-center select-none drop-shadow-md"
             style={{ fontFamily: "'Knewave', cursive" }}
@@ -536,7 +576,7 @@ export default function Home() {
           colorClass="text-[#8C6F5A]"
           position="bottom"
           type="drip"
-        />{" "}
+        />
       </section>
 
       {/* About Us Section */}
@@ -546,13 +586,8 @@ export default function Home() {
       >
         <div
           ref={aboutReveal.ref}
-          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${
-            aboutReveal.isVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-12"
-          }`}
+          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${aboutReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
         >
-          {/* THE ABOUT US TITLE PILL */}
           <div className="bg-[#BFA28C] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
             <h2
               className="text-4xl md:text-5xl text-[#F3E4C9] tracking-wider select-none"
@@ -561,65 +596,33 @@ export default function Home() {
               About Us
             </h2>
           </div>
-
-          {/* Content Layout: 2 Columns on Desktop, Stacked on Mobile */}
           <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center w-full max-w-5xl">
-            {/* Left Column: Animated Exploding S'more */}
             <div className="relative flex justify-center items-center h-80 md:h-[28rem] w-full">
-              {/* The background circle */}
               <div className="absolute w-64 h-64 md:w-80 md:h-80 bg-[#BFA28C] rounded-full shadow-inner opacity-90"></div>
-
-              {/* THE ANIMATED 4-LAYER S'MORE */}
               <div className="relative z-10 w-48 h-48 md:w-64 md:h-64 flex items-center justify-center left-2 -mt-[-1rem]">
-                {/* 4. Bottom Graham Cracker (Back Layer) */}
                 <img
                   src="/smore-layer-1.webp"
-                  alt="Bottom Graham Cracker"
-                  className={`absolute inset-0 w-full h-full left-1 object-contain drop-shadow-lg transition-all duration-[1500ms] ease-in-out ${
-                    isExploded
-                      ? "translate-y-16 md:translate-y-24 scale-105"
-                      : "translate-y-6 md:translate-y-8 scale-100"
-                  }`}
+                  alt="Bottom Graham"
+                  className={`absolute inset-0 w-full h-full left-1 object-contain drop-shadow-lg transition-all duration-[1500ms] ease-in-out ${isExploded ? "translate-y-16 md:translate-y-24 scale-105" : "translate-y-6 md:translate-y-8 scale-100"}`}
                 />
-
-                {/* 3. Chocolate Layer */}
                 <img
                   src="/smore-layer-3-chocolate.webp"
                   alt="Chocolate"
-                  className={`absolute inset-0 w-full h-full object-contain drop-shadow-lg transition-all duration-[1500ms] ease-in-out ${
-                    isExploded
-                      ? "translate-y-4 md:translate-y-8 scale-105"
-                      : "translate-y-2 md:translate-y-3 scale-100"
-                  }`}
+                  className={`absolute inset-0 w-full h-full object-contain drop-shadow-lg transition-all duration-[1500ms] ease-in-out ${isExploded ? "translate-y-4 md:translate-y-8 scale-105" : "translate-y-2 md:translate-y-3 scale-100"}`}
                 />
-
-                {/* 2. Marshmallow Layer */}
                 <img
                   src="/smore-layer-2-marshmallow.webp"
                   alt="Marshmallow"
-                  className={`absolute inset-0 w-full h-full object-contain drop-shadow-xl transition-all duration-[1500ms] ease-in-out ${
-                    isExploded
-                      ? "-translate-y-8 md:-translate-y-10 scale-105"
-                      : "-translate-y-2 md:-translate-y-3 scale-100"
-                  }`}
+                  className={`absolute inset-0 w-full h-full object-contain drop-shadow-xl transition-all duration-[1500ms] ease-in-out ${isExploded ? "-translate-y-8 md:-translate-y-10 scale-105" : "-translate-y-2 md:-translate-y-3 scale-100"}`}
                 />
-
-                {/* 1. Top Graham Cracker (Front Layer) */}
                 <img
                   src="/smore-layer-1.webp"
-                  alt="Top Graham Cracker"
-                  className={`absolute inset-0 w-full h-full object-contain drop-shadow-2xl transition-all duration-[1500ms] ease-in-out ${
-                    isExploded
-                      ? "-translate-y-20 md:-translate-y-28 scale-105"
-                      : "-translate-y-6 md:-translate-y-8 scale-100"
-                  }`}
+                  alt="Top Graham"
+                  className={`absolute inset-0 w-full h-full object-contain drop-shadow-2xl transition-all duration-[1500ms] ease-in-out ${isExploded ? "-translate-y-20 md:-translate-y-28 scale-105" : "-translate-y-6 md:-translate-y-8 scale-100"}`}
                 />
               </div>
             </div>
-
-            {/* Right Column: Text Content */}
             <div className="flex-1 flex flex-col justify-center gap-6 text-[#F4EBD9] text-center md:text-left mt-10 md:mt-0">
-              {/* Bubbly Subheading */}
               <h3
                 className="flex items-center justify-center md:justify-start gap-3 text-4xl md:text-5xl drop-shadow-md text-[#EBE0D0] mb-2"
                 style={{ fontFamily: "'Margarine', sans-serif" }}
@@ -627,14 +630,11 @@ export default function Home() {
                 Cerita Manis Kami{" "}
                 <FaStar className="text-3xl md:text-4xl text-[#F3E8D6]" />
               </h3>
-
-              {/* Dynamic Paragraph Wrapper (Now with a sliding flexbox!) */}
               <div className="relative overflow-hidden w-full min-h-[240px] md:min-h-[320px]">
                 <div
                   className="absolute top-0 left-0 w-full h-full flex transition-transform duration-500 ease-in-out"
                   style={{ transform: `translateX(-${aboutStep * 100}%)` }}
                 >
-                  {/* Paragraph 1 */}
                   <div className="w-full shrink-0 flex items-center pr-4">
                     <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95 text-justify">
                       <strong
@@ -650,8 +650,6 @@ export default function Home() {
                       premium, dan biskuit yang renyah.
                     </p>
                   </div>
-
-                  {/* Paragraph 2 */}
                   <div className="w-full shrink-0 flex items-center pr-4">
                     <p className="text-xl md:text-2xl font-medium leading-relaxed opacity-95 text-justify">
                       Misi kami sederhana: memberikan pengalaman dalam menikmati
@@ -663,23 +661,14 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-
-              {/* Navigation Controls */}
               <div className="flex items-center justify-center md:justify-start gap-4 mt-2">
-                {/* Left Button */}
                 <button
                   onClick={() => setAboutStep(0)}
                   disabled={aboutStep === 0}
-                  className={`p-3 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    aboutStep === 0
-                      ? "bg-[#A68A77]/40 text-[#F4EBD9]/40 cursor-not-allowed shadow-none"
-                      : "bg-[#EBE0D0] text-[#8C6F5A] shadow-md hover:scale-105 hover:bg-white"
-                  }`}
+                  className={`p-3 rounded-full flex items-center justify-center transition-all duration-300 ${aboutStep === 0 ? "bg-[#A68A77]/40 text-[#F4EBD9]/40 cursor-not-allowed shadow-none" : "bg-[#EBE0D0] text-[#8C6F5A] shadow-md hover:scale-105 hover:bg-white"}`}
                 >
                   <FaChevronLeft className="text-xl" />
                 </button>
-
-                {/* Interactive Pagination Dots */}
                 <div className="flex gap-2 mx-4">
                   <div
                     onClick={() => setAboutStep(0)}
@@ -690,16 +679,10 @@ export default function Home() {
                     className={`h-3 rounded-full transition-all duration-500 cursor-pointer ${aboutStep === 1 ? "w-10 bg-[#EBE0D0]" : "w-3 bg-[#A68A77] hover:bg-[#EBE0D0]/50"}`}
                   ></div>
                 </div>
-
-                {/* Right Button */}
                 <button
                   onClick={() => setAboutStep(1)}
                   disabled={aboutStep === 1}
-                  className={`p-3 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    aboutStep === 1
-                      ? "bg-[#A68A77]/40 text-[#F4EBD9]/40 cursor-not-allowed shadow-none"
-                      : "bg-[#EBE0D0] text-[#8C6F5A] shadow-md hover:scale-105 hover:bg-white"
-                  }`}
+                  className={`p-3 rounded-full flex items-center justify-center transition-all duration-300 ${aboutStep === 1 ? "bg-[#A68A77]/40 text-[#F4EBD9]/40 cursor-not-allowed shadow-none" : "bg-[#EBE0D0] text-[#8C6F5A] shadow-md hover:scale-105 hover:bg-white"}`}
                 >
                   <FaChevronRight className="text-xl" />
                 </button>
@@ -710,7 +693,10 @@ export default function Home() {
       </section>
 
       {/* Why Us Section */}
-      <section id="why-us" className="py-24 bg-brown relative overflow-hidden">
+      <section
+        id="why-us"
+        className="py-24 bg-[#5C3D2E] relative overflow-hidden"
+      >
         <ThemeDivider
           colorClass="text-[#8C6F5A]"
           position="top"
@@ -718,13 +704,8 @@ export default function Home() {
         />
         <div
           ref={whyUsReveal.ref}
-          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${
-            whyUsReveal.isVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-12"
-          }`}
+          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${whyUsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
         >
-          {/* THE WHY US TITLE PILL */}
           <div className="bg-[#A68A77] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
             <h2
               className="text-4xl md:text-5xl text-[#F4EBD9] tracking-wider select-none"
@@ -733,10 +714,7 @@ export default function Home() {
               Why Us?
             </h2>
           </div>
-
-          {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
-            {/* Feature 1 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
               <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform text-[#F4EBD9]">
                 <FaStar className="text-3xl" />
@@ -752,8 +730,6 @@ export default function Home() {
                 rasa yang tak terlupakan.
               </p>
             </div>
-
-            {/* Feature 2 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
               <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform text-[#F4EBD9]">
                 <FaFire className="text-3xl" />
@@ -769,8 +745,6 @@ export default function Home() {
                 repot menyalakan api unggun.
               </p>
             </div>
-
-            {/* Feature 3 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
               <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform text-[#F4EBD9]">
                 <FaTags className="text-3xl" />
@@ -786,8 +760,6 @@ export default function Home() {
                 di kantong pelajar.
               </p>
             </div>
-
-            {/* Feature 4 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2.5rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-xl relative group border border-white/5">
               <div className="w-16 h-16 mx-auto bg-[#BFA28C] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform text-[#F4EBD9]">
                 <FaHeart className="text-3xl" />
@@ -813,19 +785,14 @@ export default function Home() {
         className="py-24 bg-[#8C6F5A] relative overflow-hidden"
       >
         <ThemeDivider
-          colorClass="text-[#bea18b]"
+          colorClass="text-[#5c3d2e]"
           position="top"
           type="cracker"
         />
         <div
           ref={productsReveal.ref}
-          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${
-            productsReveal.isVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-12"
-          }`}
+          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${productsReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
         >
-          {/* THE PRODUCT TITLE PILL */}
           <div className="bg-[#A98B76] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-24 shadow-md">
             <h2
               className="text-4xl md:text-5xl text-[#F4EBD9] tracking-wider select-none"
@@ -834,8 +801,6 @@ export default function Home() {
               Products
             </h2>
           </div>
-
-          {/* CAROUSEL CONTAINER */}
           <div className="relative w-full max-w-5xl flex items-center justify-center min-h-[400px]">
             {loading ? (
               <div
@@ -850,20 +815,13 @@ export default function Home() {
               </div>
             ) : (
               <>
-                {/* Left Nav Arrow */}
                 <button
                   onClick={prevProduct}
                   disabled={activeIndex === 0}
-                  className={`z-30 p-4 md:p-6 rounded-full text-3xl md:text-4xl transition-all duration-300 ${
-                    activeIndex === 0
-                      ? "bg-white/40 text-[#5C3D2E]/40 cursor-not-allowed shadow-none"
-                      : "bg-white text-[#5C3D2E] shadow-xl hover:scale-110"
-                  }`}
+                  className={`z-30 p-4 md:p-6 rounded-full text-3xl md:text-4xl transition-all duration-300 ${activeIndex === 0 ? "bg-white/40 text-[#5C3D2E]/40 cursor-not-allowed shadow-none" : "bg-white text-[#5C3D2E] shadow-xl hover:scale-110"}`}
                 >
                   <FaChevronLeft />
                 </button>
-
-                {/* The Products Showcase */}
                 <div className="relative flex items-center justify-center w-full h-[26rem] md:h-[26rem] overflow-visible">
                   {products.map((product, index) => {
                     const isActive = index === activeIndex;
@@ -887,7 +845,6 @@ export default function Home() {
                                 : "w-48 h-56 md:w-56 md:h-64 z-0 scale-75 opacity-0 pointer-events-none translate-x-0 hidden sm:flex"
                         }`}
                       >
-                        {/* Image Drip built directly into the active card */}
                         {isActive && (
                           <img
                             src="/product-drip.webp"
@@ -895,8 +852,6 @@ export default function Home() {
                             className="absolute -bottom-13 right-[-1] w-10 md:w-14 h-auto pointer-events-none transition-opacity duration-500 delay-200"
                           />
                         )}
-
-                        {/* Product Image popping out the top */}
                         <div
                           className="w-full h-48 md:h-56 bg-[#EBE0D0] rounded-xl overflow-hidden mb-6 shrink-0 p-4 flex items-center justify-center cursor-pointer"
                           onClick={() => openModal(product)}
@@ -912,8 +867,6 @@ export default function Home() {
                             }}
                           />
                         </div>
-
-                        {/* Card Content - MINIMAL & CENTERED */}
                         <div className="flex flex-col flex-1 items-center text-center">
                           <h3
                             className="text-[#F4EBD9] text-2xl font-bold mb-6 tracking-wide line-clamp-2"
@@ -921,8 +874,6 @@ export default function Home() {
                           >
                             {product.name}
                           </h3>
-
-                          {/* Buy Button - CENTERED & PUSHED TO BOTTOM */}
                           <button
                             onClick={() => openModal(product)}
                             disabled={product.stock === 0}
@@ -939,16 +890,10 @@ export default function Home() {
                     );
                   })}
                 </div>
-
-                {/* Right Nav Arrow */}
                 <button
                   onClick={nextProduct}
                   disabled={activeIndex === products.length - 1}
-                  className={`z-30 p-4 md:p-6 rounded-full text-3xl md:text-4xl transition-all duration-300 ${
-                    activeIndex === products.length - 1
-                      ? "bg-white/40 text-[#5C3D2E]/40 cursor-not-allowed shadow-none"
-                      : "bg-white text-[#5C3D2E] shadow-xl hover:scale-110"
-                  }`}
+                  className={`z-30 p-4 md:p-6 rounded-full text-3xl md:text-4xl transition-all duration-300 ${activeIndex === products.length - 1 ? "bg-white/40 text-[#5C3D2E]/40 cursor-not-allowed shadow-none" : "bg-white text-[#5C3D2E] shadow-xl hover:scale-110"}`}
                 >
                   <FaChevronRight />
                 </button>
@@ -971,13 +916,8 @@ export default function Home() {
         />
         <div
           ref={contactReveal.ref}
-          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${
-            contactReveal.isVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-12"
-          }`}
+          className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center transition-all duration-1000 ease-out delay-100 ${contactReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
         >
-          {/* THE CONTACT TITLE PILL */}
           <div className="bg-[#A68A77] px-12 md:px-20 py-3 md:py-4 rounded-[2rem] md:rounded-full mb-16 shadow-md drop-shadow-sm">
             <h2
               className="text-4xl md:text-5xl text-[#F4EBD9] tracking-wider select-none"
@@ -986,10 +926,7 @@ export default function Home() {
               Contact Us
             </h2>
           </div>
-
-          {/* 2-Column Layout: Info on Left, Form on Right */}
           <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start w-full max-w-5xl">
-            {/* Left Column: Direct Info & Copy */}
             <div className="text-[#F3E8D6]">
               <h3
                 className="text-3xl md:text-4xl mb-6 tracking-wide drop-shadow-sm"
@@ -1002,8 +939,6 @@ export default function Home() {
                 ketersediaan stok hari ini, atau sekadar ngobrol soal s'mores?
                 Tim Smeas selalu siap membantu!
               </p>
-
-              {/* Contact Details List */}
               <div className="space-y-8">
                 <div className="flex items-center gap-5 group">
                   <div className="w-14 h-14 bg-[#8C6F5A] rounded-full flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
@@ -1018,7 +953,6 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-5 group">
                   <div className="w-14 h-14 bg-[#8C6F5A] rounded-full flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
                     <FaClock />
@@ -1032,7 +966,6 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-5 group">
                   <div className="w-14 h-14 bg-[#8C6F5A] rounded-full flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
                     <FaWhatsapp />
@@ -1046,27 +979,19 @@ export default function Home() {
                 </div>
               </div>
             </div>
-
-            {/* Right Column: The Form */}
             <div className="bg-[#8C6F5A] p-8 md:p-10 rounded-[2.5rem] shadow-2xl border border-white/10 relative">
               <img
                 src="/product-drip.webp"
                 alt="Form Drip"
                 className="absolute -top-6 -right-4 w-16 h-auto pointer-events-none drop-shadow-sm opacity-80"
               />
-
               {contactFeedback.type && (
                 <div
-                  className={`mb-6 p-4 rounded-xl text-center font-bold text-lg transition-all duration-300 ${
-                    contactFeedback.type === "success"
-                      ? "bg-green-100 text-green-800 border-2 border-green-300"
-                      : "bg-red-100 text-red-800 border-2 border-red-300"
-                  }`}
+                  className={`mb-6 p-4 rounded-xl text-center font-bold text-lg transition-all duration-300 ${contactFeedback.type === "success" ? "bg-green-100 text-green-800 border-2 border-green-300" : "bg-red-100 text-red-800 border-2 border-red-300"}`}
                 >
                   {contactFeedback.text}
                 </div>
               )}
-
               <form
                 className="flex flex-col gap-6"
                 onSubmit={handleContactSubmit}
@@ -1108,7 +1033,6 @@ export default function Home() {
                     />
                   </div>
                 </div>
-
                 <div>
                   <label
                     className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-xl"
@@ -1126,7 +1050,6 @@ export default function Home() {
                     className="w-full bg-[#EBE0D0] text-[#8C6F5A] placeholder-[#8C6F5A]/60 px-6 py-4 rounded-full outline-none focus:ring-4 focus:ring-[#BFA28C]/50 transition-all font-medium"
                   />
                 </div>
-
                 <div>
                   <label
                     className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-xl"
@@ -1145,16 +1068,10 @@ export default function Home() {
                     className="w-full bg-[#EBE0D0] text-[#8C6F5A] placeholder-[#8C6F5A]/60 px-6 py-4 rounded-[2rem] outline-none focus:ring-4 focus:ring-[#BFA28C]/50 transition-all font-medium resize-none"
                   ></textarea>
                 </div>
-
-                {/* --- UPDATE SUBMIT BUTTON WITH LOADING STATE --- */}
                 <button
                   type="submit"
                   disabled={isContactLoading}
-                  className={`mt-4 bg-[#4A2E1B] text-[#F4EBD9] w-full py-4 rounded-full font-bold text-2xl transition-transform drop-shadow-md ${
-                    isContactLoading
-                      ? "opacity-70 cursor-wait"
-                      : "hover:brightness-110 hover:scale-[1.02]"
-                  }`}
+                  className={`mt-4 bg-[#4A2E1B] text-[#F4EBD9] w-full py-4 rounded-full font-bold text-2xl transition-transform drop-shadow-md ${isContactLoading ? "opacity-70 cursor-wait" : "hover:brightness-110 hover:scale-[1.02]"}`}
                   style={{ fontFamily: "'Knewave', cursive" }}
                 >
                   {isContactLoading
@@ -1167,24 +1084,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- MODALS --- */}
-
-      {/* Product Modal */}
+      {/* --- PRODUCT ORDER MODAL --- */}
       {isModalOpen && modalProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div
-            className={`absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer transition-opacity duration-300 ${
-              isProductAnimVisible ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer transition-opacity duration-300 ${isProductAnimVisible ? "opacity-100" : "opacity-0"}`}
             onClick={closeModal}
           ></div>
-
           <div
-            className={`relative bg-[#F3E8D6] rounded-[2rem] p-6 md:p-8 w-full max-w-4xl shadow-2xl z-10 flex flex-col md:flex-row gap-8 max-h-[90vh] overflow-y-auto custom-scrollbar transition-all duration-400 transform ${
-              isProductAnimVisible
-                ? "scale-100 translate-y-0 opacity-100"
-                : "scale-95 translate-y-12 opacity-0"
-            }`}
+            className={`relative bg-[#F3E8D6] rounded-[2rem] p-6 md:p-8 w-full max-w-4xl shadow-2xl z-10 flex flex-col md:flex-row gap-8 max-h-[90vh] overflow-y-auto custom-scrollbar transition-all duration-400 transform ${isProductAnimVisible ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-12 opacity-0"}`}
           >
             <button
               onClick={closeModal}
@@ -1192,8 +1100,6 @@ export default function Home() {
             >
               X
             </button>
-
-            {/* Modal Image - FIXED PROPORTIONS */}
             <div className="w-full md:w-1/2 h-64 md:h-96 bg-[#EBE0D0] rounded-[1.5rem] p-6 flex items-center justify-center shrink-0 border border-[#BFA28C]/30">
               <img
                 src={`${BACKEND_URL}/storage/products/${modalProduct.image}`}
@@ -1206,8 +1112,6 @@ export default function Home() {
                 }}
               />
             </div>
-
-            {/* Modal Details */}
             <div className="w-full md:w-1/2 flex flex-col justify-center">
               <h3
                 className="text-[#4A2E1B] text-3xl md:text-4xl mb-2 leading-tight"
@@ -1219,104 +1123,144 @@ export default function Home() {
                 Rp {parseInt(modalProduct.price).toLocaleString("id-ID")}
               </p>
 
-              {/* Description Box */}
-              <div className="bg-[#EBE0D0] p-5 rounded-2xl mb-6 border border-[#BFA28C]/30 flex-1">
-                <p className="text-[#4A2E1B] font-medium text-sm md:text-base leading-relaxed">
-                  {modalProduct.description ||
-                    "Deskripsi produk belum tersedia."}
-                </p>
-              </div>
-
-              {/* Stock Badge */}
-              <div className="flex items-center mb-6">
-                <span className="bg-[#8C6F5A] text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-sm">
-                  Sisa Stok: {modalProduct.stock}
-                </span>
-              </div>
-
-              {/* Order / WhatsApp Button */}
-              <a
-                href={`https://wa.me/6281234567890?text=Halo,%20saya%20ingin%20memesan%20${encodeURIComponent(modalProduct.name)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-[#4A2E1B] text-[#F4EBD9] py-4 rounded-full font-bold text-xl hover:bg-[#5C3D2E] hover:scale-[1.02] transition-all drop-shadow-md text-center flex justify-center items-center gap-3"
-                style={{ fontFamily: "'Knewave', cursive" }}
+              {/* DYNAMIC ORDER FORM */}
+              <form
+                onSubmit={handleOrderSubmit}
+                className="flex flex-col gap-4 mt-2 w-full"
               >
-                Pesan via WhatsApp
-              </a>
+                <div className="flex gap-4 items-center">
+                  <div className="w-1/3">
+                    <label className="block text-[#8C6F5A] font-bold text-sm mb-1">
+                      Jumlah
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={modalProduct.stock}
+                      required
+                      value={orderForm.quantity}
+                      onChange={(e) =>
+                        setOrderForm({
+                          ...orderForm,
+                          quantity: parseInt(e.target.value) || 1,
+                        })
+                      }
+                      className="w-full px-4 py-3 rounded-xl bg-[#EBE0D0] text-[#4A2E1B] font-bold outline-none border border-[#BFA28C]/50 focus:ring-2 focus:ring-[#8C6F5A]"
+                    />
+                  </div>
+                  <div className="w-2/3">
+                    <span className="bg-[#8C6F5A] text-white px-4 py-2 rounded-full text-sm font-bold shadow-sm block text-center mt-4">
+                      Sisa Stok: {modalProduct.stock}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[#8C6F5A] font-bold text-sm mb-1">
+                    Catatan untuk Admin (Opsional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={orderForm.message}
+                    onChange={(e) =>
+                      setOrderForm({ ...orderForm, message: e.target.value })
+                    }
+                    placeholder="Contoh: Tolong packing yang rapi ya..."
+                    className="w-full px-4 py-3 rounded-xl bg-[#EBE0D0] text-[#4A2E1B] font-medium outline-none border border-[#BFA28C]/50 focus:ring-2 focus:ring-[#8C6F5A] resize-none"
+                  ></textarea>
+                </div>
+
+                {!user && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-[#BFA28C]/30 pt-4 mt-2">
+                    <div>
+                      <label className="block text-[#8C6F5A] font-bold text-sm mb-1">
+                        Nama Lengkap
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={orderForm.guest_name}
+                        onChange={(e) =>
+                          setOrderForm({
+                            ...orderForm,
+                            guest_name: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 rounded-xl bg-white text-[#4A2E1B] outline-none border border-[#BFA28C]/50 focus:ring-2 focus:ring-[#8C6F5A]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#8C6F5A] font-bold text-sm mb-1">
+                        No. WhatsApp
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="08xxxxxxxx"
+                        value={orderForm.guest_phone}
+                        onChange={(e) =>
+                          setOrderForm({
+                            ...orderForm,
+                            guest_phone: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 rounded-xl bg-white text-[#4A2E1B] outline-none border border-[#BFA28C]/50 focus:ring-2 focus:ring-[#8C6F5A]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmittingOrder || modalProduct.stock === 0}
+                  className={`mt-4 w-full py-4 rounded-full font-bold text-xl transition-all drop-shadow-md flex justify-center items-center gap-3 ${isSubmittingOrder || modalProduct.stock === 0 ? "bg-gray-400 text-gray-200 cursor-not-allowed" : "bg-[#4A2E1B] text-[#F4EBD9] hover:bg-[#5C3D2E] hover:scale-[1.02]"}`}
+                  style={{ fontFamily: "'Knewave', cursive" }}
+                >
+                  {isSubmittingOrder ? "Memproses..." : "Pesan Sekarang"}
+                </button>
+              </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* Login Popup Modal */}
+      {/* LOGIN MODAL */}
       {isLoginModalMounted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          {/* Background Overlay - Fades In/Out */}
           <div
-            className={`absolute inset-0 bg-[#F3E8D6]/80 backdrop-blur-sm cursor-pointer transition-opacity duration-300 ease-in-out ${
-              isLoginModalOpen ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 bg-[#F3E8D6]/80 backdrop-blur-sm cursor-pointer transition-opacity duration-300 ease-in-out ${isLoginModalOpen ? "opacity-100" : "opacity-0"}`}
             onClick={closeLoginModal}
           ></div>
-
-          {/* The Modal Container - Zooms & Slides In/Out (Adapted from product modal) */}
           <div
-            className={`relative bg-[#8d6a54] rounded-t-[3rem] p-8 md:p-12 w-full max-w-xl shadow-2xl flex flex-col items-center transition-all duration-300 ease-out transform ${
-              isLoginModalOpen
-                ? "opacity-100 scale-100 translate-y-0"
-                : "opacity-0 scale-95 translate-y-8"
-            }`}
+            className={`relative bg-[#8d6a54] rounded-t-[3rem] p-8 md:p-12 w-full max-w-xl shadow-2xl flex flex-col items-center transition-all duration-300 ease-out transform ${isLoginModalOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-8"}`}
           >
-            {/* The bold, round Close Button (Top Right) */}
             <button
               onClick={closeLoginModal}
               className="absolute top-6 right-6 bg-white text-black text-2xl font-black w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors drop-shadow-md pb-1"
             >
               x
             </button>
-
-            {/* drip left */}
             <img
               src="/login-drip-left.webp"
               alt="Login Drip Left"
               className="absolute -bottom-18 left-0 w-20 md:w-20 h-auto pointer-events-none"
             />
-
-            {/* drip right */}
             <img
               src="/login-drip-right.webp"
               alt="Login Drip Right"
               className="absolute -bottom-18 right-0 w-20 md:w-20 h-auto pointer-events-none"
             />
-
-            {/* Form Title */}
             <h3
-              className={`text-[#F4EBD9] text-3xl md:text-4xl tracking-wider mb-6 text-center transition-all duration-300 ease-in-out transform ${
-                isFormAnimVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 -translate-y-4"
-              }`}
+              className={`text-[#F4EBD9] text-3xl md:text-4xl tracking-wider mb-6 text-center transition-all duration-300 ease-in-out transform ${isFormAnimVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}
               style={{ fontFamily: "'Knewave', cursive" }}
             >
               {isRegisterMode ? "Register" : "Login"}
             </h3>
-
-            {/* Login Form */}
             <form
-              className={`w-full flex flex-col gap-6 transition-all duration-300 ease-in-out transform ${
-                isFormAnimVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 -translate-y-4"
-              }`}
+              className={`w-full flex flex-col gap-6 transition-all duration-300 ease-in-out transform ${isFormAnimVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}
               onSubmit={handleAuthSubmit}
             >
               <div
-                className={`grid transition-all duration-300 ease-in-out ${
-                  isRegisterMode
-                    ? "grid-rows-[1fr] opacity-100 mb-6"
-                    : "grid-rows-[0fr] opacity-0 mb-0 pointer-events-none"
-                }`}
+                className={`grid transition-all duration-300 ease-in-out ${isRegisterMode ? "grid-rows-[1fr] opacity-100 mb-6" : "grid-rows-[0fr] opacity-0 mb-0 pointer-events-none"}`}
               >
                 <div className="overflow-hidden flex flex-col">
                   <label
@@ -1336,8 +1280,6 @@ export default function Home() {
                   />
                 </div>
               </div>
-
-              {/* --- ADD mb-6 TO EMAIL FIELD --- */}
               <div className="mb-6">
                 <label
                   className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-2xl"
@@ -1355,8 +1297,6 @@ export default function Home() {
                   required
                 />
               </div>
-
-              {/* --- ADD mb-6 TO PASSWORD FIELD --- */}
               <div className="mb-6">
                 <label
                   className="block text-[#F4EBD9] font-bold mb-2 ml-4 lowercase tracking-wide text-2xl"
@@ -1374,16 +1314,10 @@ export default function Home() {
                   required
                 />
               </div>
-
-              {/* Login/Register Button */}
               <button
                 type="submit"
                 disabled={isAuthLoading}
-                className={`bg-[#EBE0D0] text-[#8C6F5A] w-full py-4 rounded-full font-bold text-2xl transition-transform drop-shadow-md mt-4 ${
-                  isAuthLoading
-                    ? "opacity-70 cursor-wait"
-                    : "hover:brightness-105 hover:scale-105"
-                }`}
+                className={`bg-[#EBE0D0] text-[#8C6F5A] w-full py-4 rounded-full font-bold text-2xl transition-transform drop-shadow-md mt-4 ${isAuthLoading ? "opacity-70 cursor-wait" : "hover:brightness-105 hover:scale-105"}`}
                 style={{ fontFamily: "'Knewave', cursive" }}
               >
                 {isAuthLoading
@@ -1392,8 +1326,6 @@ export default function Home() {
                     ? "Daftar Sekarang"
                     : "Login"}
               </button>
-
-              {/* Toggle Text */}
               <p className="text-center text-[#F4EBD9] font-medium mt-2">
                 {isRegisterMode ? "Sudah punya akun? " : "Belum punya akun? "}
                 <button
@@ -1409,10 +1341,9 @@ export default function Home() {
         </div>
       )}
 
-      {/* --- FOOTER / TEAM CREDITS & LINKS --- */}
+      {/* FOOTER */}
       <footer className="bg-[#A98B76] pt-20 pb-10 text-[#F4EBD9] mt-24 rounded-t-[3rem] md:rounded-t-[5rem] relative overflow-hidden shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          {/* Section Header */}
           <div className="text-center mb-16">
             <h2
               className="text-5xl md:text-6xl tracking-wider mb-4 drop-shadow-md"
@@ -1424,10 +1355,7 @@ export default function Home() {
               Kelompok 1 - S'mores Smeas / SMK Negeri 1 Surabaya
             </p>
           </div>
-
-          {/* Team Member Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-8">
-            {/* Team Member 1 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-lg border border-white/10 group">
               <div className="w-16 h-16 mx-auto bg-[#BAC4A2] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
                 <span
@@ -1451,8 +1379,6 @@ export default function Home() {
                 @khrisselll
               </a>
             </div>
-
-            {/* Team Member 2 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-lg border border-white/10 group">
               <div className="w-16 h-16 mx-auto bg-[#BAC4A2] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
                 <span
@@ -1476,8 +1402,6 @@ export default function Home() {
                 @pan_dvpan
               </a>
             </div>
-
-            {/* Team Member 3 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-lg border border-white/10 group">
               <div className="w-16 h-16 mx-auto bg-[#BAC4A2] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
                 <span
@@ -1501,8 +1425,6 @@ export default function Home() {
                 @kyleebgeenir
               </a>
             </div>
-
-            {/* Team Member 4 */}
             <div className="bg-[#8C6F5A] p-8 rounded-[2rem] text-center hover:-translate-y-3 transition-transform duration-300 shadow-lg border border-white/10 group">
               <div className="w-16 h-16 mx-auto bg-[#BAC4A2] rounded-full flex items-center justify-center mb-6 shadow-inner group-hover:scale-110 transition-transform">
                 <span
@@ -1527,10 +1449,7 @@ export default function Home() {
               </a>
             </div>
           </div>
-
-          {/* --- LINKS SECTION --- */}
           <div className="border-t-2 border-[#F4EBD9]/20 pt-16 pb-12 mt-16 flex flex-col lg:flex-row justify-between gap-12">
-            {/* Brand & Mission */}
             <div className="lg:w-1/3">
               <h2
                 className="text-4xl tracking-wider mb-4 drop-shadow-sm"
@@ -1544,10 +1463,7 @@ export default function Home() {
                 late-night treat or a sweet gift.
               </p>
             </div>
-
-            {/* Sitemap Grid */}
             <div className="lg:w-2/3 grid grid-cols-2 md:grid-cols-4 gap-8">
-              {/* Column 1 */}
               <div>
                 <h4 className="font-bold text-lg mb-6 text-white drop-shadow-sm uppercase tracking-wide">
                   Explore
@@ -1587,8 +1503,6 @@ export default function Home() {
                   </li>
                 </ul>
               </div>
-
-              {/* Column 2 */}
               <div>
                 <h4 className="font-bold text-lg mb-6 text-white drop-shadow-sm uppercase tracking-wide">
                   Company
@@ -1628,8 +1542,6 @@ export default function Home() {
                   </li>
                 </ul>
               </div>
-
-              {/* Column 3 */}
               <div>
                 <h4 className="font-bold text-lg mb-6 text-white drop-shadow-sm uppercase tracking-wide">
                   Legal
@@ -1669,8 +1581,6 @@ export default function Home() {
                   </li>
                 </ul>
               </div>
-
-              {/* Column 4 */}
               <div>
                 <h4 className="font-bold text-lg mb-6 text-white drop-shadow-sm uppercase tracking-wide">
                   Social
@@ -1712,8 +1622,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-
-          {/* Bottom Copyright Bar */}
           <div className="border-t-2 border-[#F4EBD9]/10 pt-8 flex flex-col md:flex-row justify-between items-center text-sm opacity-80">
             <p className="tracking-wide mb-4 md:mb-0">
               &copy; {new Date().getFullYear()} S'mores Smeas Inc. All rights

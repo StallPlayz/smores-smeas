@@ -37,8 +37,11 @@ interface Product {
 
 interface OrderData {
   id: number;
-  customer_name: string;
-  items_summary: string;
+  unique_id: string;
+  guest_name: string | null;
+  user: { name: string } | null;
+  product: { name: string } | null;
+  quantity: number;
   status: string;
   total_price: number;
 }
@@ -439,8 +442,12 @@ export default function AdminPage() {
                     <thead>
                       <tr className="text-[#8C6F5A] border-b-2 border-[#8C6F5A]/20">
                         <th className="pb-4 font-bold">Order ID</th>
-                        <th className="pb-4 font-bold">Status</th>
-                        <th className="pb-4 font-bold text-right">Revenue</th>
+                        <th className="pb-4 font-bold">Customer</th>
+                        <th className="pb-4 font-bold">Item</th>
+                        <th className="pb-4 font-bold text-center">Status</th>
+                        <th className="pb-4 font-bold text-right">
+                          Total Harga
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="text-[#4A2E1B] font-medium">
@@ -450,14 +457,29 @@ export default function AdminPage() {
                             key={order.id}
                             className="border-b border-[#8C6F5A]/10 hover:bg-[#F3E8D6] transition-colors"
                           >
-                            <td className="py-4">#{order.id}</td>
                             <td className="py-4">
+                              #{order.unique_id || order.id}
+                            </td>
+
+                            {/* Dynamically fallback to guest_name if user is null */}
+                            <td className="py-4">
+                              {order.guest_name || order.user?.name || "Guest"}
+                            </td>
+
+                            {/* Display Quantity x Product Name */}
+                            <td className="py-4">
+                              {order.quantity}x{" "}
+                              {order.product?.name || "Produk Dihapus"}
+                            </td>
+
+                            <td className="py-4 text-center">
                               <span
                                 className={`py-1 px-3 rounded-full text-sm font-bold ${order.status === "completed" ? "bg-green-200 text-green-800" : "bg-yellow-200 text-yellow-800"}`}
                               >
                                 {order.status.toUpperCase()}
                               </span>
                             </td>
+
                             <td className="py-4 text-right">
                               Rp {order.total_price.toLocaleString("id-ID")}
                             </td>
@@ -466,7 +488,7 @@ export default function AdminPage() {
                       ) : (
                         <tr>
                           <td
-                            colSpan={3}
+                            colSpan={5}
                             className="py-8 text-center text-[#8C6F5A]"
                           >
                             Belum ada pesanan masuk.
