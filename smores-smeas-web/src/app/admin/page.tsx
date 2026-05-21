@@ -12,6 +12,7 @@ import {
   FaExchangeAlt,
   FaShoppingBag,
   FaEdit,
+  FaEnvelope,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 
@@ -46,9 +47,19 @@ interface OrderData {
   total_price: number;
 }
 
+interface Message {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  created_at: string;
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [messagesList, setMessagesList] = useState<Message[]>([]);
   const [user, setUser] = useState<{
     id: number;
     name: string;
@@ -180,6 +191,73 @@ export default function AdminPage() {
     if (activeTab === "admins") fetchUsers();
     if (activeTab === "products") fetchProducts();
   }, [activeTab, isAuthorized, fetchDashboardData, fetchUsers, fetchProducts]);
+
+  // --- MESSAGES ---
+  const fetchMessages = useCallback(async () => {
+    setIsLoadingData(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BACKEND_URL}/api/messages`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+      const data = await res.json();
+
+      if (res.ok && data.data) {
+        let messages = [];
+
+        // Logic to handle Laravel Pagination OR standard array
+        if (data.data.data && Array.isArray(data.data.data)) {
+          // This handles the paginated structure: { data: { data: [...] } }
+          messages = data.data.data;
+        } else if (Array.isArray(data.data)) {
+          // This handles a standard array structure: { data: [...] }
+          messages = data.data;
+        }
+
+        setMessagesList(messages);
+      }
+    } catch (error) {
+      showToast("Gagal mengambil pesan.", "error");
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, []);
+
+  const handleDeleteMessage = async (id: number) => {
+    if (!confirm("Hapus pesan ini?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BACKEND_URL}/api/messages/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+      if (res.ok) {
+        showToast("Pesan dihapus.", "success");
+        fetchMessages();
+      }
+    } catch (error) {
+      showToast("Gagal menghapus.", "error");
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthorized) return;
+    // ... other tab checks
+    if (activeTab === "messages") fetchMessages();
+  }, [
+    activeTab,
+    isAuthorized,
+    fetchDashboardData,
+    fetchUsers,
+    fetchProducts,
+    fetchMessages,
+  ]);
 
   // --- ACTION HANDLERS ---
   const handleRoleChange = async (targetId: number, currentRole: string) => {
@@ -357,6 +435,12 @@ export default function AdminPage() {
               className={`flex items-center gap-4 px-6 py-4 rounded-full transition-all ${activeTab === "admins" ? "bg-[#8C6F5A] text-white shadow-md" : "hover:bg-[#5C3D2E] text-[#EBE0D0]"}`}
             >
               <FaUserCog className="text-xl" /> Account Center
+            </button>
+            <button
+              onClick={() => setActiveTab("messages")}
+              className={`flex items-center gap-4 px-6 py-4 rounded-full transition-all ${activeTab === "messages" ? "bg-[#8C6F5A] text-white shadow-md" : "hover:bg-[#5C3D2E] text-[#EBE0D0]"}`}
+            >
+              <FaEnvelope className="text-xl" /> Messages
             </button>
           </nav>
         </div>
@@ -641,6 +725,68 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* MESSAGES TAB */}
+          {activeTab === "messages" && (
+            <div className="bg-[#EBE0D0] rounded-[2rem] p-8 shadow-md border border-[#BFA28C]/30 flex flex-col h-[600px]">
+              <h3
+                className="text-2xl font-bold text-[#4A2E1B] mb-6"
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
+                User Messages
+              </h3>
+              <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-[#8C6F5A] border-b-2 border-[#8C6F5A]/20">
+                      <th className="pb-4 font-bold">Nama/Email</th>
+                      <th className="pb-4 font-bold">Telepon</th>
+                      <th className="pb-4 font-bold">Pesan</th>
+                      <th className="pb-4 font-bold text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-[#4A2E1B] font-medium">
+                    {Array.isArray(messagesList) && messagesList.length > 0 ? (
+                      messagesList.map((m) => (
+                        <tr
+                          key={m.id}
+                          className="border-b border-[#8C6F5A]/10 hover:bg-[#F3E8D6]"
+                        >
+                          <td className="py-4">
+                            <p className="font-bold">{m.name}</p>
+                            <p className="text-sm text-[#8C6F5A]">{m.email}</p>
+                          </td>
+                          <td className="py-4 text-sm font-medium">
+                            {m.phone || "-"}
+                          </td>
+                          <td className="py-4 max-w-xs truncate">
+                            {m.message}
+                          </td>
+                          <td className="py-4 text-center">
+                            <button
+                              onClick={() => handleDeleteMessage(m.id)}
+                              className="text-red-600 hover:bg-red-100 p-2 rounded-full"
+                            >
+                              <FaTrashAlt />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="py-8 text-center text-[#8C6F5A]"
+                        >
+                          {isLoadingData ? "Memuat..." : "Tidak ada pesan."}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
