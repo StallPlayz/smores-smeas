@@ -3,16 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource with product and user data.
      */
     public function index()
     {
-        $orders = Order::all();
+        // We use 'with' to load the product and user data in the same query
+        $orders = Order::with(['product', 'user'])->latest()->get();
+
         return response()->json([
             'status' => 'success',
             'data' => $orders
@@ -32,7 +35,7 @@ class OrderController extends Controller
             'guest_phone' => 'nullable|string|max:20',
         ]);
 
-        $product = \App\Models\Product::findOrFail($request->product_id);
+        $product = Product::findOrFail($request->product_id);
 
         if ($product->stock < $request->quantity) {
             return response()->json(['message' => 'Stok produk tidak mencukupi.'], 400);
@@ -41,7 +44,7 @@ class OrderController extends Controller
         $total_price = $product->price * $request->quantity;
         $isLoggedIn = auth('sanctum')->check();
 
-        $order = \App\Models\Order::create([
+        $order = Order::create([
             'user_id' => $isLoggedIn ? auth('sanctum')->id() : null,
             'product_id' => $product->id,
             'guest_name' => $isLoggedIn ? null : $request->guest_name,
@@ -52,7 +55,6 @@ class OrderController extends Controller
             'status' => 'pending',
         ]);
 
-        // Deduct stock automatically
         $product->decrement('stock', $request->quantity);
 
         return response()->json(['status' => 'success', 'data' => $order], 201);

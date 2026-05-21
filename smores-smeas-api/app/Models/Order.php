@@ -18,6 +18,16 @@ class Order extends Model
         'unique_id'
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
     /**
      * Boot function dari Laravel Eloquent.
      * Digunakan untuk menghandle logic otomatis saat event tertentu terjadi.
