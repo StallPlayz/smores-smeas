@@ -15,6 +15,7 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import { useScrollReveal } from "../lib/useScrollReveal";
+import Swal from "sweetalert2";
 interface Product {
   id: number;
   name: string;
@@ -73,6 +74,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   const [modalProduct, setModalProduct] = useState<Product | null>(null);
+  const [isProductAnimVisible, setIsProductAnimVisible] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoginModalMounted, setIsLoginModalMounted] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -170,12 +172,16 @@ export default function Home() {
 
   const openModal = (product: Product) => {
     setModalProduct(product);
-    setTimeout(() => setIsModalOpen(true), 10);
+    setIsModalOpen(true);
+    setTimeout(() => setIsProductAnimVisible(true), 10);
   };
 
   const closeModal = () => {
-    setIsModalOpen(false);
-    setTimeout(() => setModalProduct(null), 300);
+    setIsProductAnimVisible(false);
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setModalProduct(null);
+    }, 300);
   };
 
   const openLoginModal = () => {
@@ -892,47 +898,41 @@ export default function Home() {
 
                         {/* Product Image popping out the top */}
                         <div
-                          className={`absolute ${isActive ? "-top-16 md:-top-24 w-48 md:w-64" : "-top-12 w-36 md:w-48"} drop-shadow-xl transition-all duration-700`}
+                          className="w-full h-48 md:h-56 bg-[#EBE0D0] rounded-xl overflow-hidden mb-6 shrink-0 p-4 flex items-center justify-center cursor-pointer"
+                          onClick={() => openModal(product)}
                         >
                           <img
                             src={`${BACKEND_URL}/storage/products/${product.image}`}
                             alt={product.name}
-                            className="w-full h-auto object-contain hover:scale-105 transition-transform"
+                            className="w-full h-full object-contain drop-shadow-lg transition-transform duration-300 hover:scale-110"
                             onError={(e) => {
+                              (e.target as HTMLImageElement).onerror = null;
                               (e.target as HTMLImageElement).src =
-                                "https://via.placeholder.com/300?text=Smore";
+                                "/no-image-placeholder.webp";
                             }}
                           />
                         </div>
 
-                        {/* Product Details (Only visible on active card) */}
-                        <div
-                          className={`mt-20 md:mt-24 flex flex-col items-center transition-opacity duration-500 ${isActive ? "opacity-100" : "opacity-0"}`}
-                        >
+                        {/* Card Content - MINIMAL & CENTERED */}
+                        <div className="flex flex-col flex-1 items-center text-center">
                           <h3
-                            className="text-[#F4EBD9] text-2xl md:text-3xl tracking-wider mb-2 text-center px-4"
+                            className="text-[#F4EBD9] text-2xl font-bold mb-6 tracking-wide line-clamp-2"
                             style={{ fontFamily: "'Knewave', cursive" }}
                           >
                             {product.name}
                           </h3>
 
-                          {/* Price */}
-                          <div
-                            className="text-[#F4EBD9] text-lg md:text-xl tracking-wider mb-6 opacity-90"
-                            style={{ fontFamily: "'Knewave', cursive" }}
-                          >
-                            IDR {Number(product.price).toLocaleString("id-ID")}
-                          </div>
-
+                          {/* Buy Button - CENTERED & PUSHED TO BOTTOM */}
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openModal(product);
-                            }}
-                            className="bg-[#EBE0D0] text-[#8C6F5A] px-8 py-2 md:px-10 md:py-3 rounded-full font-bold text-lg hover:brightness-105 transition-colors drop-shadow-md"
-                            style={{ fontFamily: "'Knewave', cursive" }}
+                            onClick={() => openModal(product)}
+                            disabled={product.stock === 0}
+                            className={`px-8 py-3 w-3/4 rounded-full font-bold text-lg transition-all shadow-md ${
+                              product.stock === 0
+                                ? "bg-gray-500 text-gray-300 cursor-not-allowed"
+                                : "bg-[#EBE0D0] text-[#4A2E1B] hover:bg-white hover:scale-105"
+                            }`}
                           >
-                            Buy Now
+                            {product.stock === 0 ? "Habis" : "Beli"}
                           </button>
                         </div>
                       </div>
@@ -1169,86 +1169,82 @@ export default function Home() {
 
       {/* --- MODALS --- */}
 
-      {/* Product Detail Modal */}
-      {modalProduct && (
+      {/* Product Modal */}
+      {isModalOpen && modalProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          {/* Background Overlay - Fades In/Out */}
           <div
-            className={`absolute inset-0 bg-[#F3E8D6]/80 backdrop-blur-sm cursor-pointer transition-opacity duration-300 ease-in-out ${
-              isModalOpen ? "opacity-100" : "opacity-0"
+            className={`absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer transition-opacity duration-300 ${
+              isProductAnimVisible ? "opacity-100" : "opacity-0"
             }`}
             onClick={closeModal}
           ></div>
 
-          {/* The Modal Container - Zooms & Slides In/Out */}
           <div
-            className={`relative bg-[#A98B76] rounded-[3rem] p-8 md:p-12 w-full max-w-xl max-h-[70vh] shadow-2xl flex flex-col items-center transition-all duration-300 ease-out transform ${
-              isModalOpen
-                ? "opacity-100 scale-100 translate-y-0"
-                : "opacity-0 scale-95 translate-y-8"
+            className={`relative bg-[#F3E8D6] rounded-[2rem] p-6 md:p-8 w-full max-w-4xl shadow-2xl z-10 flex flex-col md:flex-row gap-8 max-h-[90vh] overflow-y-auto custom-scrollbar transition-all duration-400 transform ${
+              isProductAnimVisible
+                ? "scale-100 translate-y-0 opacity-100"
+                : "scale-95 translate-y-12 opacity-0"
             }`}
           >
-            {/* The bold, round Close Button (Top Right) */}
             <button
               onClick={closeModal}
-              className="absolute top-6 right-6 bg-white text-black text-2xl font-black w-12 h-12 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors drop-shadow-md pb-1"
+              className="absolute top-4 right-6 text-[#8C6F5A] hover:text-[#4A2E1B] font-black text-2xl z-20"
             >
-              x
+              X
             </button>
 
-            {/* Modal Drip Asset */}
-            <img
-              src="/product-drip.webp"
-              alt="Modal Drip"
-              className="absolute -bottom-14 right-0 w-16 md:w-16 h-auto pointer-events-none"
-            />
-
-            {/* Product Image */}
-            <div className="w-64 h-64 md:w-80 md:h-80 -mt-24 md:-mt-32 drop-shadow-2xl mb-8">
+            {/* Modal Image - FIXED PROPORTIONS */}
+            <div className="w-full md:w-1/2 h-64 md:h-96 bg-[#EBE0D0] rounded-[1.5rem] p-6 flex items-center justify-center shrink-0 border border-[#BFA28C]/30">
               <img
                 src={`${BACKEND_URL}/storage/products/${modalProduct.image}`}
                 alt={modalProduct.name}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
                 onError={(e) => {
+                  (e.target as HTMLImageElement).onerror = null;
                   (e.target as HTMLImageElement).src =
-                    "https://via.placeholder.com/400?text=Smore";
+                    "/no-image-placeholder.webp";
                 }}
               />
             </div>
 
-            {/* Product Title */}
-            <h3
-              className="text-[#F4EBD9] text-3xl md:text-4xl tracking-wider mb-6 text-center"
-              style={{ fontFamily: "'Knewave', cursive" }}
-            >
-              {modalProduct.name}
-            </h3>
+            {/* Modal Details */}
+            <div className="w-full md:w-1/2 flex flex-col justify-center">
+              <h3
+                className="text-[#4A2E1B] text-3xl md:text-4xl mb-2 leading-tight"
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
+                {modalProduct.name}
+              </h3>
+              <p className="text-[#8C6F5A] text-2xl font-black mb-6">
+                Rp {parseInt(modalProduct.price).toLocaleString("id-ID")}
+              </p>
 
-            {/* Product Description */}
-            <p className="text-[#F4EBD9] text-center text-lg md:text-l max-w-2xl leading-relaxed mb-6 font-medium italic">
-              "{modalProduct.description}"
-            </p>
+              {/* Description Box */}
+              <div className="bg-[#EBE0D0] p-5 rounded-2xl mb-6 border border-[#BFA28C]/30 flex-1">
+                <p className="text-[#4A2E1B] font-medium text-sm md:text-base leading-relaxed">
+                  {modalProduct.description ||
+                    "Deskripsi produk belum tersedia."}
+                </p>
+              </div>
 
-            {/* Dynamic Stock Indicator */}
-            <p className="text-[#F4EBD9]/80 text-center text-sm md:text-base font-bold mb-4 uppercase tracking-widest">
-              Available Stock: {modalProduct.stock}
-            </p>
+              {/* Stock Badge */}
+              <div className="flex items-center mb-6">
+                <span className="bg-[#8C6F5A] text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-sm">
+                  Sisa Stok: {modalProduct.stock}
+                </span>
+              </div>
 
-            {/* Price Label */}
-            <div
-              className="text-[#F4EBD9] text-2xl md:text-3xl tracking-wider mb-8 drop-shadow-sm"
-              style={{ fontFamily: "'Knewave', cursive" }}
-            >
-              IDR {Number(modalProduct.price).toLocaleString("id-ID")}
+              {/* Order / WhatsApp Button */}
+              <a
+                href={`https://wa.me/6281234567890?text=Halo,%20saya%20ingin%20memesan%20${encodeURIComponent(modalProduct.name)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-[#4A2E1B] text-[#F4EBD9] py-4 rounded-full font-bold text-xl hover:bg-[#5C3D2E] hover:scale-[1.02] transition-all drop-shadow-md text-center flex justify-center items-center gap-3"
+                style={{ fontFamily: "'Knewave', cursive" }}
+              >
+                Pesan via WhatsApp
+              </a>
             </div>
-
-            {/* Buy Now Button */}
-            <button
-              className="bg-[#EBE0D0] text-[#8C6F5A] px-12 py-4 rounded-full font-bold text-xl hover:brightness-105 transition-transform hover:scale-105 drop-shadow-md"
-              style={{ fontFamily: "'Knewave', cursive" }}
-            >
-              Buy Now
-            </button>
           </div>
         </div>
       )}
