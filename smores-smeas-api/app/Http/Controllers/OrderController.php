@@ -60,6 +60,29 @@ class OrderController extends Controller
         return response()->json(['status' => 'success', 'data' => $order], 201);
     }
 
+    public function analytics(Request $request)
+{
+    // Ensure only admins can access this data
+    if ($request->user()->role !== 'admin') {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    $totalOrders = Order::count();
+    $totalRevenue = Order::where('status', 'pending') // Or 'completed', adjust based on your flow
+                         ->sum('total_price') ?? 0;
+
+    // Fetch last 10 orders with user and product relations
+    $recentOrders = Order::with(['product', 'user'])
+                         ->latest()
+                         ->take(10)
+                         ->get();
+
+    return response()->json([
+        'total_orders' => $totalOrders,
+        'total_revenue' => $totalRevenue,
+        'recent_orders' => $recentOrders
+    ]);
+}
     /**
      * Display the specified resource.
      */
